@@ -148,8 +148,8 @@ function buildPrompt(mood) {
         `Given the mood/atmosphere: "${mood}"`,
         `Generate a cohesive color palette. Return ONLY a raw JSON object with these exact keys: ${keys}.`,
         'ALL values must be hex colors in #RRGGBB format. Do NOT use rgba() or rgb().',
-        'Text colors (bodyColor, quoteColor, emColor) must be clearly readable on dark backgrounds.',
-        'Background colors (blurTintColor, chatTintColor, userMesColor, botMesColor) should be dark/muted tones.',
+        'Ensure good contrast: text colors (bodyColor, quoteColor, emColor) must be readable against background colors (blurTintColor, chatTintColor, userMesColor, botMesColor).',
+        'Match the brightness and saturation to the mood described.',
         'No markdown, no backticks, no explanation. Only the raw JSON object.',
     ].join('\n');
 }
