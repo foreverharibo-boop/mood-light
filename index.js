@@ -6,13 +6,14 @@ const EXT = 'moodlight';
 const STYLE_ID = 'moodlight-override-style';
 
 // ST CSS variables that control theme colors
+// tint: true = 기존 테마의 알파값을 읽어서 그대로 유지
 const VAR_MAP = [
     { key: 'bodyColor',         css: '--SmartThemeBodyColor',             label: 'Text' },
-    { key: 'blurTintColor',     css: '--SmartThemeBlurTintColor',         label: 'Panel BG' },
+    { key: 'blurTintColor',     css: '--SmartThemeBlurTintColor',         label: 'Panel BG',  tint: true },
     { key: 'borderColor',       css: '--SmartThemeBorderColor',           label: 'Border' },
-    { key: 'chatTintColor',     css: '--SmartThemeChatTintColor',         label: 'Chat BG' },
-    { key: 'userMesColor',      css: '--SmartThemeUserMesBlurTintColor',  label: 'User Msg' },
-    { key: 'botMesColor',       css: '--SmartThemeBotMesBlurTintColor',   label: 'Bot Msg' },
+    { key: 'chatTintColor',     css: '--SmartThemeChatTintColor',         label: 'Chat BG',   tint: true },
+    { key: 'userMesColor',      css: '--SmartThemeUserMesBlurTintColor',  label: 'User Msg',  tint: true },
+    { key: 'botMesColor',       css: '--SmartThemeBotMesBlurTintColor',   label: 'Bot Msg',   tint: true },
     { key: 'quoteColor',        css: '--SmartThemeQuoteColor',            label: 'Quote' },
     { key: 'emColor',           css: '--SmartThemeEmColor',               label: 'Emphasis' },
 ];
@@ -83,11 +84,48 @@ function getStyleEl() {
     return el;
 }
 
+function readOriginalAlpha(cssVar) {
+    // 현재 테마에서 해당 변수의 알파값을 읽어옴
+    // MoodLight 오버라이드를 일시적으로 무시하고 원본 값을 읽어야 함
+    const el = document.getElementById(STYLE_ID);
+    const backup = el ? el.textContent : '';
+    if (el) el.textContent = '';
+
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
+
+    if (el) el.textContent = backup;
+
+    // rgba(r, g, b, a) 에서 a 추출
+    const rgbaMatch = raw.match(/rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(?:,\s*([\d.]+))?\s*\)/);
+    if (rgbaMatch && rgbaMatch[1] !== undefined) {
+        return parseFloat(rgbaMatch[1]);
+    }
+    return 1; // 알파 없으면 불투명
+}
+
+function hexToRgba(hex, alpha) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function processColor(v, rawColor) {
+    // hex로 정규화
+    const hex = toHex(rawColor);
+    if (!v.tint) return hex;
+    // tint 변수: 기존 테마의 알파값을 유지
+    const alpha = readOriginalAlpha(v.css);
+    if (alpha >= 1) return hex;
+    return hexToRgba(hex, alpha);
+}
+
 function injectColors(colors) {
     if (!colors) return;
     const lines = VAR_MAP
         .filter(v => colors[v.key])
-        .map(v => `  ${v.css}: ${colors[v.key]} !important;`);
+        .map(v => `  ${v.css}: ${processColor(v, colors[v.key])} !important;`);
     if (!lines.length) return;
     getStyleEl().textContent = `:root {\n${lines.join('\n')}\n}`;
     currentColors = { ...colors };
@@ -109,9 +147,9 @@ function buildPrompt(mood) {
         'You are a UI color palette designer for a chat application.',
         `Given the mood/atmosphere: "${mood}"`,
         `Generate a cohesive color palette. Return ONLY a raw JSON object with these exact keys: ${keys}.`,
-        'Values must be valid CSS colors (hex #RRGGBB for solid, rgba() for transparent).',
-        'Background/tint colors should use rgba() with 0.6~0.9 alpha for glass-like feel.',
-        'Text colors must contrast well against their backgrounds.',
+        'ALL values must be hex colors in #RRGGBB format. Do NOT use rgba() or rgb().',
+        'Text colors (bodyColor, quoteColor, emColor) must be clearly readable on dark backgrounds.',
+        'Background colors (blurTintColor, chatTintColor, userMesColor, botMesColor) should be dark/muted tones.',
         'No markdown, no backticks, no explanation. Only the raw JSON object.',
     ].join('\n');
 }
