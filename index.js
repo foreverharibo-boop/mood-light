@@ -224,6 +224,58 @@ function luminance(hex) {
     return 0.299 * r + 0.587 * g + 0.114 * b;
 }
 
+// WCAG 상대 휘도
+function relativeLuminance(hex) {
+    const h = hex.replace('#', '');
+    const srgb = [0, 2, 4].map(i => {
+        let c = parseInt(h.substring(i, i + 2), 16) / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+}
+
+function contrastRatio(hex1, hex2) {
+    const l1 = relativeLuminance(hex1);
+    const l2 = relativeLuminance(hex2);
+    const lighter = Math.max(l1, l2);
+    const darker = Math.min(l1, l2);
+    return (lighter + 0.05) / (darker + 0.05);
+}
+
+// 대비 4.5:1 미달 시 텍스트 색 자동 보정
+function ensureContrast(colors) {
+    const vars = getActiveVars();
+    const bgKeys = vars.filter(v => v.tint).map(v => v.key);
+    const fgKeys = vars.filter(v => !v.tint).map(v => v.key);
+
+    // 대표 배경색 (blurTintColor 우선)
+    const bgKey = bgKeys.find(k => colors[k]) || bgKeys[0];
+    const bgColor = colors[bgKey];
+    if (!bgColor) return colors;
+
+    const fixed = { ...colors };
+    for (const fk of fgKeys) {
+        if (!fixed[fk]) continue;
+        let hex = toHex(fixed[fk]);
+        let ratio = contrastRatio(hex, toHex(bgColor));
+        if (ratio >= 4.5) continue;
+
+        // 배경이 어두우면 텍스트를 밝게, 밝으면 어둡게
+        const bgLum = luminance(toHex(bgColor));
+        const hsl = hexToHSL(hex);
+        const dir = bgLum < 128 ? 1 : -1;
+        let attempts = 0;
+        while (ratio < 4.5 && attempts < 30) {
+            hsl.l = Math.max(0, Math.min(100, hsl.l + dir * 3));
+            hex = hslToHex(hsl.h, hsl.s, hsl.l);
+            ratio = contrastRatio(hex, toHex(bgColor));
+            attempts++;
+        }
+        fixed[fk] = hex;
+    }
+    return fixed;
+}
+
 // ===== Image Color Extraction =====
 
 function extractColorsFromImage(file) {
@@ -286,7 +338,7 @@ function quantizeAndMap(imageData) {
     hexColors.sort((a, b) => luminance(a) - luminance(b));
 
     // 변수에 매핑: 어두운 것 → 배경, 밝은 것 → 텍스트
-    return mapColorsToVars(hexColors);
+    return ensureContrast(mapColorsToVars(hexColors));
 }
 
 function mapColorsToVars(sortedHexColors) {
@@ -325,24 +377,35 @@ function generateHarmony(baseHex, harmonyType) {
     const harmony = HARMONY_TYPES.find(h => h.id === harmonyType) || HARMONY_TYPES[0];
     const base = hexToHSL(baseHex);
 
-    // 기본색 + 하모니 색 생성
-    const hues = [base.h, ...harmony.angles.map(a => (base.h + a) % 360)];
+    const hues = [base.h, ...harmony.angles.map(a => (base.h + a + 360) % 360)];
+    const vars = getActiveVars();
+    const bgVars = vars.filter(v => v.tint);
+    const fgVars = vars.filter(v => !v.tint);
+    const colors = {};
 
-    // 각 hue에서 밝기/채도 변형 생성
-    const palette = [];
-    for (const hue of hues) {
-        // 어두운 버전 (배경용)
-        palette.push(hslToHex(hue, Math.max(15, base.s * 0.5), Math.max(8, base.l * 0.25)));
-        palette.push(hslToHex(hue, Math.max(10, base.s * 0.4), Math.max(5, base.l * 0.2)));
-        // 중간 버전 (보더/인용)
-        palette.push(hslToHex(hue, base.s * 0.7, base.l * 0.6));
-        // 밝은 버전 (텍스트용)
-        palette.push(hslToHex(hue, Math.min(90, base.s * 0.8), Math.min(92, base.l + 30)));
-    }
+    // 배경 변수: 베이스에서 밝기만 낮추고 채도 유지 (상대 오프셋)
+    bgVars.forEach((v, i) => {
+        const hue = hues[i % hues.length];
+        const darkOffset = 10 + i * 5; // 차이를 조금씩 벌림
+        colors[v.key] = hslToHex(
+            hue,
+            Math.max(5, base.s - 10),
+            Math.max(5, Math.min(30, base.l - darkOffset))
+        );
+    });
 
-    // 밝기순 정렬 후 매핑
-    palette.sort((a, b) => luminance(a) - luminance(b));
-    return mapColorsToVars(palette);
+    // 전경 변수: 베이스에서 밝기 올리고 채도 살짝 조정
+    fgVars.forEach((v, i) => {
+        const hue = hues[i % hues.length];
+        const lightOffset = 20 + i * 8;
+        colors[v.key] = hslToHex(
+            hue,
+            Math.max(10, base.s - 5 + i * 3),
+            Math.min(95, base.l + lightOffset)
+        );
+    });
+
+    return ensureContrast(colors);
 }
 
 // ===== AI Generation =====
@@ -370,7 +433,7 @@ function buildPrompt(mood, existingColors) {
         `Given the mood/atmosphere: "${mood}"`,
         `Generate a cohesive color palette. Return ONLY a raw JSON object with these exact keys: ${keys}.`,
         'ALL values must be hex colors in #RRGGBB format. Do NOT use rgba() or rgb().',
-        'Ensure good contrast: text colors must be readable against background colors.',
+        'CRITICAL: text colors (bodyColor, quoteColor, emColor) MUST have at least WCAG 4.5:1 contrast ratio against background colors (blurTintColor, chatTintColor). Make text clearly readable.',
         'Match the brightness and saturation to the mood described.',
         'No markdown, no backticks, no explanation. Only the raw JSON object.',
     ].join('\n');
@@ -403,7 +466,7 @@ async function generateColors(mood, existingColors) {
         const vars = getActiveVars();
         const valid = vars.some(v => colors[v.key]);
         if (!valid) throw new Error('유효한 색상이 없습니다.');
-        return colors;
+        return ensureContrast(colors);
     } finally {
         if (switched && originalProfile) {
             await switchProfile(originalProfile);
