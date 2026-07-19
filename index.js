@@ -141,8 +141,25 @@ function clearInjection() {
 
 // ===== AI Generation =====
 
-function buildPrompt(mood) {
+function buildPrompt(mood, existingColors) {
     const keys = VAR_MAP.map(v => `"${v.key}"`).join(', ');
+
+    if (existingColors) {
+        // 수정 모드: 기존 팔레트 + 수정 지시
+        const currentJson = JSON.stringify(existingColors, null, 2);
+        return [
+            'You are a UI color palette designer for a chat application.',
+            `Here is the current color palette:\n${currentJson}`,
+            `The user wants to modify it: "${mood}"`,
+            'Apply the requested changes while keeping the overall palette cohesive.',
+            'Only change what the user asked for. Keep other colors consistent.',
+            `Return ONLY a raw JSON object with these exact keys: ${keys}.`,
+            'ALL values must be hex colors in #RRGGBB format. Do NOT use rgba() or rgb().',
+            'No markdown, no backticks, no explanation. Only the raw JSON object.',
+        ].join('\n');
+    }
+
+    // 새 생성 모드
     return [
         'You are a UI color palette designer for a chat application.',
         `Given the mood/atmosphere: "${mood}"`,
@@ -154,7 +171,7 @@ function buildPrompt(mood) {
     ].join('\n');
 }
 
-async function generateColors(mood) {
+async function generateColors(mood, existingColors) {
     const s = settings();
     const targetProfile = s.selectedProfile;
     const originalProfile = getCurrentProfileId();
@@ -171,7 +188,7 @@ async function generateColors(mood) {
             throw new Error('generateQuietPrompt을 사용할 수 없습니다. ST 버전을 확인해주세요.');
         }
 
-        const prompt = buildPrompt(mood);
+        const prompt = buildPrompt(mood, existingColors);
         const result = await context.generateQuietPrompt(prompt, false, false);
 
         if (!result) {
@@ -239,7 +256,7 @@ function createModal() {
 
             <div class="moodlight-input-row">
                 <input class="moodlight-mood-input" type="text"
-                    placeholder="분위기를 입력하세요... (예: 차가운 새벽)" />
+                    placeholder="분위기 또는 수정 지시 (예: 텍스트 더 밝게)" />
                 <button class="moodlight-generate-btn">생성</button>
             </div>
 
@@ -270,17 +287,23 @@ function createModal() {
     const input = backdrop.querySelector('.moodlight-mood-input');
     const genBtn = backdrop.querySelector('.moodlight-generate-btn');
 
+    function updateGenBtn() {
+        genBtn.textContent = currentColors ? '수정' : '생성';
+    }
+
     async function onGenerate() {
         const mood = input.value.trim();
         if (!mood) return;
         genBtn.disabled = true;
-        setStatus('<span class="moodlight-spinner"></span>생성 중...', backdrop);
+        const isRefine = !!currentColors;
+        setStatus(`<span class="moodlight-spinner"></span>${isRefine ? '수정' : '생성'} 중...`, backdrop);
         try {
-            const colors = await generateColors(mood);
+            const colors = await generateColors(mood, isRefine ? currentColors : null);
             currentColors = colors;
             renderPreview(colors, backdrop);
             backdrop.querySelector('.moodlight-actions').style.display = 'flex';
             setStatus('', backdrop);
+            updateGenBtn();
         } catch (e) {
             setStatus(`⚠ ${e.message}`, backdrop);
         }
@@ -314,6 +337,7 @@ function createModal() {
         backdrop.querySelector('.moodlight-actions').style.display = 'none';
         renderPresetList(backdrop);
         setStatus('초기화됨', backdrop);
+        updateGenBtn();
     });
 
     document.documentElement.appendChild(backdrop);
@@ -464,10 +488,10 @@ function populateProfileDropdown() {
 
 function createSettingsUI() {
     const html = `
-        <div id="moodlight-settings" class="extension_container">
-            <div class="inline-drawer-toggle" tabindex="0">
+        <div id="moodlight-settings" class="inline-drawer">
+            <div class="inline-drawer-toggle inline-drawer-header">
                 <b>MoodLight</b>
-                <span class="inline-drawer-icon">▼</span>
+                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
             </div>
             <div class="inline-drawer-content">
                 <label>연결 프로필</label>
@@ -479,18 +503,12 @@ function createSettingsUI() {
                         cursor:pointer; text-shadow:none;">↻</button>
                 </div>
 
-                <button class="moodlight-open-btn">MoodLight 열기</button>
+                <button class="moodlight-open-btn menu_button">MoodLight 열기</button>
             </div>
         </div>
     `;
 
     $('#extensions_settings2').append(html);
-
-    // Drawer toggle
-    $('#moodlight-settings .inline-drawer-toggle').on('click', function () {
-        $(this).toggleClass('open');
-        $(this).next('.inline-drawer-content').toggleClass('open');
-    });
 
     // Profile select
     populateProfileDropdown();
