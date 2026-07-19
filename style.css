@@ -1,33 +1,6 @@
 /* ===== MoodLight - Theme Color Override Extension ===== */
 
 /* --- Settings Panel (Extension Tab) --- */
-#moodlight-settings .inline-drawer-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    padding: 8px 0;
-}
-
-#moodlight-settings .inline-drawer-toggle .inline-drawer-icon {
-    transition: transform 0.2s ease;
-}
-
-#moodlight-settings .inline-drawer-toggle.open .inline-drawer-icon {
-    transform: rotate(180deg);
-}
-
-#moodlight-settings .inline-drawer-content {
-    display: none;
-    flex-direction: column;
-    gap: 8px;
-    padding: 4px 0 12px;
-}
-
-#moodlight-settings .inline-drawer-content.open {
-    display: flex;
-}
-
 #moodlight-settings label {
     font-size: 12px;
     color: var(--SmartThemeBodyColor);
@@ -46,24 +19,6 @@
     color: var(--SmartThemeBodyColor);
     font-size: 13px;
     text-shadow: none;
-}
-
-#moodlight-settings .moodlight-open-btn {
-    width: 100%;
-    padding: 8px;
-    margin-top: 4px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 5px;
-    background: transparent;
-    color: var(--SmartThemeBodyColor);
-    cursor: pointer;
-    font-size: 13px;
-    text-shadow: none;
-    transition: background 0.15s;
-}
-
-#moodlight-settings .moodlight-open-btn:hover {
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
 }
 
 /* --- Modal Backdrop --- */
