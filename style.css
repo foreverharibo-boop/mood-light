@@ -1,0 +1,388 @@
+/* ===== MoodLight - Theme Color Override Extension ===== */
+
+/* --- Settings Panel (Extension Tab) --- */
+#moodlight-settings .inline-drawer-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 8px 0;
+}
+
+#moodlight-settings .inline-drawer-toggle .inline-drawer-icon {
+    transition: transform 0.2s ease;
+}
+
+#moodlight-settings .inline-drawer-toggle.open .inline-drawer-icon {
+    transform: rotate(180deg);
+}
+
+#moodlight-settings .inline-drawer-content {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 0 12px;
+}
+
+#moodlight-settings .inline-drawer-content.open {
+    display: flex;
+}
+
+#moodlight-settings label {
+    font-size: 12px;
+    color: var(--SmartThemeBodyColor);
+    margin-bottom: 2px;
+    text-shadow: none;
+}
+
+#moodlight-settings input[type="text"],
+#moodlight-settings input[type="password"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--SmartThemeBodyColor);
+    font-size: 13px;
+    text-shadow: none;
+}
+
+#moodlight-settings .moodlight-open-btn {
+    width: 100%;
+    padding: 8px;
+    margin-top: 4px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    font-size: 13px;
+    text-shadow: none;
+    transition: background 0.15s;
+}
+
+#moodlight-settings .moodlight-open-btn:hover {
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
+}
+
+/* --- Modal Backdrop --- */
+/* documentElement에 붙이므로 body transform(MovingUI) 영향 안 받음 */
+.moodlight-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 99999;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.moodlight-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* --- Modal --- */
+.moodlight-modal {
+    width: 380px;
+    max-width: 92vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 12px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    background: rgb(from var(--SmartThemeBlurTintColor) r g b / 1);
+    color: var(--SmartThemeBodyColor);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+    text-shadow: none !important;
+}
+
+.moodlight-backdrop.active .moodlight-modal {
+    transform: scale(1);
+}
+
+/* 모달 내부 모든 텍스트: text-shadow 제거 */
+.moodlight-modal * {
+    text-shadow: none !important;
+}
+
+/* --- Modal Header --- */
+.moodlight-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.moodlight-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--SmartThemeBodyColor);
+}
+
+.moodlight-close {
+    background: none;
+    border: none;
+    color: var(--SmartThemeBodyColor);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.moodlight-close:hover {
+    color: var(--SmartThemeEmColor, var(--SmartThemeBodyColor));
+}
+
+/* --- Mood Input Area --- */
+.moodlight-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.moodlight-mood-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--SmartThemeBodyColor);
+    font-size: 13px;
+    outline: none;
+    resize: none;
+}
+
+.moodlight-mood-input::placeholder {
+    color: color-mix(in srgb, var(--SmartThemeBodyColor) 40%, transparent);
+}
+
+.moodlight-generate-btn {
+    padding: 8px 14px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+
+.moodlight-generate-btn:hover {
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
+}
+
+.moodlight-generate-btn:disabled {
+    color: color-mix(in srgb, var(--SmartThemeBodyColor) 40%, transparent);
+    cursor: not-allowed;
+}
+
+/* --- Color Preview --- */
+.moodlight-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.moodlight-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.moodlight-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+}
+
+.moodlight-swatch input[type="color"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+}
+
+.moodlight-var-name {
+    color: var(--SmartThemeBodyColor);
+    font-family: monospace;
+    font-size: 11px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- Action Buttons --- */
+.moodlight-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.moodlight-actions button {
+    flex: 1;
+    min-width: 70px;
+    padding: 7px 10px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.15s;
+}
+
+.moodlight-actions button:hover {
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
+}
+
+/* --- Saved Presets --- */
+.moodlight-presets-label {
+    font-size: 12px;
+    color: var(--SmartThemeBodyColor);
+}
+
+.moodlight-presets-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.moodlight-preset-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.15s;
+}
+
+.moodlight-preset-item:hover {
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 8%, transparent);
+}
+
+.moodlight-preset-item.active {
+    border-color: var(--SmartThemeEmColor, var(--SmartThemeBodyColor));
+}
+
+.moodlight-preset-swatches {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.moodlight-preset-mini-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid var(--SmartThemeBorderColor);
+}
+
+.moodlight-preset-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--SmartThemeBodyColor);
+}
+
+.moodlight-preset-delete {
+    background: none;
+    border: none;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+}
+
+.moodlight-preset-delete:hover {
+    color: var(--SmartThemeEmColor, var(--SmartThemeBodyColor));
+}
+
+/* --- Status / Loading --- */
+.moodlight-status {
+    font-size: 12px;
+    color: var(--SmartThemeBodyColor);
+    text-align: center;
+    min-height: 16px;
+}
+
+.moodlight-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--SmartThemeBorderColor);
+    border-top-color: var(--SmartThemeBodyColor);
+    border-radius: 50%;
+    animation: moodlight-spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+@keyframes moodlight-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- Empty State --- */
+.moodlight-empty {
+    text-align: center;
+    color: var(--SmartThemeBodyColor);
+    font-size: 12px;
+    padding: 12px 0;
+}
+
+/* --- Divider --- */
+.moodlight-divider {
+    border: none;
+    border-top: 1px solid var(--SmartThemeBorderColor);
+    margin: 2px 0;
+}
+
+/* --- Mobile --- */
+@media (pointer: coarse) {
+    .moodlight-modal {
+        width: 94vw;
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .moodlight-swatch {
+        width: 34px;
+        height: 34px;
+    }
+
+    .moodlight-actions button {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .moodlight-preset-item {
+        padding: 10px;
+    }
+}
