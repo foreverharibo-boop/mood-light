@@ -18,12 +18,9 @@ const VAR_MAP = [
 ];
 
 const DEFAULT_SETTINGS = {
-    apiEndpoint: '',
-    apiKey: '',
-    modelName: '',
+    selectedProfile: '',
     presets: [],
     activePresetId: null,
-    enabled: true,
 };
 
 let currentColors = null;
@@ -47,6 +44,31 @@ function settings() {
 
 function save() {
     saveSettingsDebounced();
+}
+
+// ===== Connection Profile =====
+
+function getConnectionProfiles() {
+    const select = document.getElementById('connection_profiles');
+    if (!select) return [];
+    return Array.from(select.options)
+        .filter(opt => opt.value)
+        .map(opt => ({ id: opt.value, name: opt.textContent.trim() }));
+}
+
+function getCurrentProfileId() {
+    const select = document.getElementById('connection_profiles');
+    return select ? select.value : '';
+}
+
+async function switchProfile(profileId) {
+    const select = document.getElementById('connection_profiles');
+    if (!select || !profileId || select.value === profileId) return false;
+    select.value = profileId;
+    select.dispatchEvent(new Event('change'));
+    // 프로필 전환 후 설정 반영 대기
+    await new Promise(r => setTimeout(r, 500));
+    return true;
 }
 
 // ===== CSS Injection =====
@@ -79,72 +101,60 @@ function clearInjection() {
     save();
 }
 
-// ===== AI API =====
+// ===== AI Generation =====
 
 function buildPrompt(mood) {
     const keys = VAR_MAP.map(v => `"${v.key}"`).join(', ');
     return [
-        {
-            role: 'system',
-            content: [
-                'You are a UI color palette designer. The user describes a mood or atmosphere.',
-                'Generate a cohesive color palette for a chat application theme.',
-                `Return ONLY a JSON object with these exact keys: ${keys}.`,
-                'Values must be valid CSS colors (hex like #RRGGBB, or rgba()).',
-                'Ensure good contrast: text colors must be readable on their respective backgrounds.',
-                'Background/tint colors should use rgba() with some transparency (0.6~0.9) for glass-like feel.',
-                'No markdown, no explanation, no backticks. Only the raw JSON object.',
-            ].join(' '),
-        },
-        {
-            role: 'user',
-            content: mood,
-        },
-    ];
+        'You are a UI color palette designer for a chat application.',
+        `Given the mood/atmosphere: "${mood}"`,
+        `Generate a cohesive color palette. Return ONLY a raw JSON object with these exact keys: ${keys}.`,
+        'Values must be valid CSS colors (hex #RRGGBB for solid, rgba() for transparent).',
+        'Background/tint colors should use rgba() with 0.6~0.9 alpha for glass-like feel.',
+        'Text colors must contrast well against their backgrounds.',
+        'No markdown, no backticks, no explanation. Only the raw JSON object.',
+    ].join('\n');
 }
 
 async function generateColors(mood) {
     const s = settings();
-    if (!s.apiEndpoint || !s.apiKey) {
-        throw new Error('API 엔드포인트와 키를 먼저 설정해주세요.');
-    }
-
-    const endpoint = s.apiEndpoint.replace(/\/+$/, '');
-    const url = endpoint.endsWith('/chat/completions')
-        ? endpoint
-        : `${endpoint}/v1/chat/completions`;
-
-    const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${s.apiKey}`,
-        },
-        body: JSON.stringify({
-            model: s.modelName || 'gpt-4o-mini',
-            messages: buildPrompt(mood),
-            temperature: 0.9,
-            max_tokens: 500,
-        }),
-    });
-
-    if (!res.ok) {
-        const errText = await res.text().catch(() => '');
-        throw new Error(`API 오류 (${res.status}): ${errText.slice(0, 200)}`);
-    }
-
-    const data = await res.json();
-    const raw = data.choices?.[0]?.message?.content || '';
-    const cleaned = raw.replace(/```(?:json)?/g, '').trim();
+    const targetProfile = s.selectedProfile;
+    const originalProfile = getCurrentProfileId();
+    let switched = false;
 
     try {
-        const colors = JSON.parse(cleaned);
-        // Validate: at least some keys match
+        // 선택된 프로필로 전환 (현재와 다를 때만)
+        if (targetProfile && targetProfile !== originalProfile) {
+            switched = await switchProfile(targetProfile);
+        }
+
+        const context = getContext();
+        if (typeof context.generateQuietPrompt !== 'function') {
+            throw new Error('generateQuietPrompt을 사용할 수 없습니다. ST 버전을 확인해주세요.');
+        }
+
+        const prompt = buildPrompt(mood);
+        const result = await context.generateQuietPrompt(prompt, false, false);
+
+        if (!result) {
+            throw new Error('AI 응답이 비어있습니다.');
+        }
+
+        // JSON 추출
+        const jsonMatch = result.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error(`JSON을 찾을 수 없습니다.\n응답: ${result.slice(0, 200)}`);
+        }
+
+        const colors = JSON.parse(jsonMatch[0]);
         const valid = VAR_MAP.some(v => colors[v.key]);
         if (!valid) throw new Error('유효한 색상이 없습니다.');
         return colors;
-    } catch (e) {
-        throw new Error(`AI 응답 파싱 실패: ${e.message}\n응답: ${cleaned.slice(0, 200)}`);
+    } finally {
+        // 원래 프로필로 복귀
+        if (switched && originalProfile) {
+            await switchProfile(originalProfile);
+        }
     }
 }
 
@@ -185,7 +195,7 @@ function createModal() {
     backdrop.innerHTML = `
         <div class="moodlight-modal">
             <div class="moodlight-header">
-                <span class="moodlight-title">🌈 MoodLight</span>
+                <span class="moodlight-title">MoodLight</span>
                 <button class="moodlight-close">✕</button>
             </div>
 
@@ -288,7 +298,6 @@ function renderPreview(colors, container) {
         swatch.className = 'moodlight-swatch';
         swatch.style.background = color;
 
-        // Color picker on swatch click
         const picker = document.createElement('input');
         picker.type = 'color';
         picker.value = toHex(color);
@@ -322,7 +331,6 @@ function renderPresetList(container) {
         const item = document.createElement('div');
         item.className = 'moodlight-preset-item' + (p.id === activeId ? ' active' : '');
 
-        // Mini swatches
         const swatches = document.createElement('div');
         swatches.className = 'moodlight-preset-swatches';
         const previewKeys = ['blurTintColor', 'bodyColor', 'userMesColor', 'botMesColor'];
@@ -368,7 +376,6 @@ function setStatus(html, container) {
 function openModal() {
     const m = createModal();
     renderPresetList(m);
-    // Show with animation
     requestAnimationFrame(() => {
         m.classList.add('active');
     });
@@ -398,33 +405,43 @@ function toHex(color) {
     return '#888888';
 }
 
+function populateProfileDropdown() {
+    const select = document.getElementById('moodlight-profile-select');
+    if (!select) return;
+
+    const profiles = getConnectionProfiles();
+    const saved = settings().selectedProfile;
+
+    select.innerHTML = '<option value="">현재 연결 사용</option>';
+    for (const p of profiles) {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        if (p.id === saved) opt.selected = true;
+        select.appendChild(opt);
+    }
+}
+
 // ===== Settings Panel UI =====
 
 function createSettingsUI() {
-    const s = settings();
     const html = `
         <div id="moodlight-settings" class="extension_container">
             <div class="inline-drawer-toggle" tabindex="0">
-                <b>🌈 MoodLight</b>
+                <b>MoodLight</b>
                 <span class="inline-drawer-icon">▼</span>
             </div>
             <div class="inline-drawer-content">
-                <label>API 엔드포인트</label>
-                <input type="text" id="moodlight-api-endpoint"
-                    placeholder="https://api.openai.com"
-                    value="${s.apiEndpoint || ''}" />
+                <label>연결 프로필</label>
+                <div style="display:flex; gap:4px;">
+                    <select id="moodlight-profile-select" style="flex:1;"></select>
+                    <button id="moodlight-refresh-profiles" title="새로고침"
+                        style="padding:4px 8px; border:1px solid var(--SmartThemeBorderColor);
+                        border-radius:5px; background:transparent; color:var(--SmartThemeBodyColor);
+                        cursor:pointer; text-shadow:none;">↻</button>
+                </div>
 
-                <label>API 키</label>
-                <input type="password" id="moodlight-api-key"
-                    placeholder="sk-..."
-                    value="${s.apiKey || ''}" />
-
-                <label>모델명</label>
-                <input type="text" id="moodlight-model-name"
-                    placeholder="gpt-4o-mini"
-                    value="${s.modelName || ''}" />
-
-                <button class="moodlight-open-btn">🌈 MoodLight 열기</button>
+                <button class="moodlight-open-btn">MoodLight 열기</button>
             </div>
         </div>
     `;
@@ -437,21 +454,15 @@ function createSettingsUI() {
         $(this).next('.inline-drawer-content').toggleClass('open');
     });
 
-    // Settings inputs
-    $('#moodlight-api-endpoint').on('input', function () {
-        settings().apiEndpoint = $(this).val().trim();
+    // Profile select
+    populateProfileDropdown();
+    $('#moodlight-profile-select').on('change', function () {
+        settings().selectedProfile = $(this).val();
         save();
     });
 
-    $('#moodlight-api-key').on('input', function () {
-        settings().apiKey = $(this).val().trim();
-        save();
-    });
-
-    $('#moodlight-model-name').on('input', function () {
-        settings().modelName = $(this).val().trim();
-        save();
-    });
+    // Refresh profiles button
+    $('#moodlight-refresh-profiles').on('click', populateProfileDropdown);
 
     // Open modal button
     $('#moodlight-settings .moodlight-open-btn').on('click', openModal);
