@@ -5,23 +5,32 @@ import { saveSettingsDebounced } from '../../../../script.js';
 const EXT = 'moodlight';
 const STYLE_ID = 'moodlight-override-style';
 
-// ST CSS variables that control theme colors
-// tint: true = 기존 테마의 알파값을 읽어서 그대로 유지
-const VAR_MAP = [
-    { key: 'bodyColor',         css: '--SmartThemeBodyColor',             label: 'Text' },
-    { key: 'blurTintColor',     css: '--SmartThemeBlurTintColor',         label: 'Panel BG',  tint: true },
-    { key: 'borderColor',       css: '--SmartThemeBorderColor',           label: 'Border' },
-    { key: 'chatTintColor',     css: '--SmartThemeChatTintColor',         label: 'Chat BG',   tint: true },
-    { key: 'userMesColor',      css: '--SmartThemeUserMesBlurTintColor',  label: 'User Msg',  tint: true },
-    { key: 'botMesColor',       css: '--SmartThemeBotMesBlurTintColor',   label: 'Bot Msg',   tint: true },
-    { key: 'quoteColor',        css: '--SmartThemeQuoteColor',            label: 'Quote' },
-    { key: 'emColor',           css: '--SmartThemeEmColor',               label: 'Emphasis' },
+// Default ST CSS variables
+const DEFAULT_VARS = [
+    { key: 'bodyColor',     css: '--SmartThemeBodyColor',            label: 'Text' },
+    { key: 'blurTintColor', css: '--SmartThemeBlurTintColor',        label: 'Panel BG',  tint: true },
+    { key: 'borderColor',   css: '--SmartThemeBorderColor',          label: 'Border' },
+    { key: 'chatTintColor', css: '--SmartThemeChatTintColor',        label: 'Chat BG',   tint: true },
+    { key: 'userMesColor',  css: '--SmartThemeUserMesBlurTintColor', label: 'User Msg',  tint: true },
+    { key: 'botMesColor',   css: '--SmartThemeBotMesBlurTintColor',  label: 'Bot Msg',   tint: true },
+    { key: 'quoteColor',    css: '--SmartThemeQuoteColor',           label: 'Quote' },
+    { key: 'emColor',       css: '--SmartThemeEmColor',              label: 'Emphasis' },
+];
+
+const HARMONY_TYPES = [
+    { id: 'complementary',       label: '보색',         angles: [180] },
+    { id: 'analogous',           label: '유사색',       angles: [-30, 30] },
+    { id: 'triadic',             label: '삼각 배색',    angles: [120, 240] },
+    { id: 'split-complementary', label: '분할 보색',    angles: [150, 210] },
+    { id: 'tetradic',            label: '사각 배색',    angles: [90, 180, 270] },
 ];
 
 const DEFAULT_SETTINGS = {
     selectedProfile: '',
     presets: [],
     activePresetId: null,
+    customVars: [],
+    disabledVars: [],
 };
 
 let currentColors = null;
@@ -39,12 +48,48 @@ function loadSettings() {
     }
 }
 
-function settings() {
-    return extension_settings[EXT];
+function settings() { return extension_settings[EXT]; }
+function save() { saveSettingsDebounced(); }
+
+// ===== Variable Management =====
+
+function getActiveVars() {
+    const custom = (settings().customVars || []).map(v => ({ ...v, custom: true }));
+    return [...DEFAULT_VARS, ...custom];
 }
 
-function save() {
-    saveSettingsDebounced();
+function isVarEnabled(cssName) {
+    return !(settings().disabledVars || []).includes(cssName);
+}
+
+function toggleVar(cssName, enabled) {
+    const s = settings();
+    if (!s.disabledVars) s.disabledVars = [];
+    if (enabled) {
+        s.disabledVars = s.disabledVars.filter(v => v !== cssName);
+    } else {
+        if (!s.disabledVars.includes(cssName)) s.disabledVars.push(cssName);
+    }
+    save();
+    // 현재 적용 중이면 다시 주입
+    if (currentColors) injectColors(currentColors);
+}
+
+function addCustomVar(css, label) {
+    const s = settings();
+    if (!s.customVars) s.customVars = [];
+    const key = css.replace(/^--/, '').replace(/[^a-zA-Z0-9]/g, '_');
+    if (getActiveVars().some(v => v.css === css)) return false;
+    s.customVars.push({ key, css, label: label || css });
+    save();
+    return true;
+}
+
+function removeCustomVar(css) {
+    const s = settings();
+    s.customVars = (s.customVars || []).filter(v => v.css !== css);
+    s.disabledVars = (s.disabledVars || []).filter(v => v !== css);
+    save();
 }
 
 // ===== Connection Profile =====
@@ -58,8 +103,7 @@ function getConnectionProfiles() {
 }
 
 function getCurrentProfileId() {
-    const select = document.getElementById('connection_profiles');
-    return select ? select.value : '';
+    return document.getElementById('connection_profiles')?.value || '';
 }
 
 async function switchProfile(profileId) {
@@ -67,7 +111,6 @@ async function switchProfile(profileId) {
     if (!select || !profileId || select.value === profileId) return false;
     select.value = profileId;
     select.dispatchEvent(new Event('change'));
-    // 프로필 전환 후 설정 반영 대기
     await new Promise(r => setTimeout(r, 500));
     return true;
 }
@@ -85,22 +128,13 @@ function getStyleEl() {
 }
 
 function readOriginalAlpha(cssVar) {
-    // 현재 테마에서 해당 변수의 알파값을 읽어옴
-    // MoodLight 오버라이드를 일시적으로 무시하고 원본 값을 읽어야 함
     const el = document.getElementById(STYLE_ID);
     const backup = el ? el.textContent : '';
     if (el) el.textContent = '';
-
     const raw = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
-
     if (el) el.textContent = backup;
-
-    // rgba(r, g, b, a) 에서 a 추출
-    const rgbaMatch = raw.match(/rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(?:,\s*([\d.]+))?\s*\)/);
-    if (rgbaMatch && rgbaMatch[1] !== undefined) {
-        return parseFloat(rgbaMatch[1]);
-    }
-    return 1; // 알파 없으면 불투명
+    const m = raw.match(/rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(?:,\s*([\d.]+))?\s*\)/);
+    return (m && m[1] !== undefined) ? parseFloat(m[1]) : 1;
 }
 
 function hexToRgba(hex, alpha) {
@@ -112,21 +146,19 @@ function hexToRgba(hex, alpha) {
 }
 
 function processColor(v, rawColor) {
-    // hex로 정규화
     const hex = toHex(rawColor);
     if (!v.tint) return hex;
-    // tint 변수: 기존 테마의 알파값을 유지
     const alpha = readOriginalAlpha(v.css);
-    if (alpha >= 1) return hex;
-    return hexToRgba(hex, alpha);
+    return alpha >= 1 ? hex : hexToRgba(hex, alpha);
 }
 
 function injectColors(colors) {
     if (!colors) return;
-    const lines = VAR_MAP
-        .filter(v => colors[v.key])
+    const vars = getActiveVars();
+    const lines = vars
+        .filter(v => colors[v.key] && isVarEnabled(v.css))
         .map(v => `  ${v.css}: ${processColor(v, colors[v.key])} !important;`);
-    if (!lines.length) return;
+    if (!lines.length) { getStyleEl().textContent = ''; return; }
     getStyleEl().textContent = `:root {\n${lines.join('\n')}\n}`;
     currentColors = { ...colors };
 }
@@ -139,13 +171,187 @@ function clearInjection() {
     save();
 }
 
+// ===== Color Helpers =====
+
+function toHex(color) {
+    try {
+        const temp = document.createElement('div');
+        temp.style.color = color;
+        document.body.appendChild(temp);
+        const computed = getComputedStyle(temp).color;
+        document.body.removeChild(temp);
+        const m = computed.match(/\d+/g);
+        if (m) return '#' + m.slice(0, 3).map(c => Number(c).toString(16).padStart(2, '0')).join('');
+    } catch {}
+    return '#888888';
+}
+
+function hexToHSL(hex) {
+    const h = hex.replace('#', '');
+    let r = parseInt(h.substring(0, 2), 16) / 255;
+    let g = parseInt(h.substring(2, 4), 16) / 255;
+    let b = parseInt(h.substring(4, 6), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let hue = 0, sat = 0, lit = (max + min) / 2;
+    if (max !== min) {
+        const d = max - min;
+        sat = lit > 0.5 ? d / (2 - max - min) : d / (max + min);
+        if (max === r) hue = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        else if (max === g) hue = ((b - r) / d + 2) / 6;
+        else hue = ((r - g) / d + 4) / 6;
+    }
+    return { h: hue * 360, s: sat * 100, l: lit * 100 };
+}
+
+function hslToHex(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    s = Math.max(0, Math.min(100, s)) / 100;
+    l = Math.max(0, Math.min(100, l)) / 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => {
+        const k = (n + h / 30) % 12;
+        const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(c * 255).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function luminance(hex) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+// ===== Image Color Extraction =====
+
+function extractColorsFromImage(file) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const maxDim = 100;
+                const ratio = Math.min(maxDim / img.width, maxDim / img.height);
+                canvas.width = Math.floor(img.width * ratio);
+                canvas.height = Math.floor(img.height * ratio);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(url);
+
+                const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                const colors = quantizeAndMap(data);
+                resolve(colors);
+            } catch (e) {
+                reject(e);
+            }
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지 로드 실패')); };
+        img.src = url;
+    });
+}
+
+function quantizeAndMap(imageData) {
+    // 색상 버킷 (각 채널 32단위 = 8레벨, 512 버킷)
+    const buckets = {};
+    for (let i = 0; i < imageData.length; i += 4) {
+        if (imageData[i + 3] < 128) continue;
+        const r = Math.round(imageData[i] / 32) * 32;
+        const g = Math.round(imageData[i + 1] / 32) * 32;
+        const b = Math.round(imageData[i + 2] / 32) * 32;
+        const key = `${r},${g},${b}`;
+        if (!buckets[key]) buckets[key] = { r, g, b, count: 0 };
+        buckets[key].count++;
+    }
+
+    // 빈도순 정렬 후 상위 추출
+    let sorted = Object.values(buckets).sort((a, b) => b.count - a.count);
+
+    // 너무 비슷한 색 제거 (거리 40 이내)
+    const distinct = [];
+    for (const c of sorted) {
+        const tooClose = distinct.some(d =>
+            Math.abs(d.r - c.r) + Math.abs(d.g - c.g) + Math.abs(d.b - c.b) < 60
+        );
+        if (!tooClose) distinct.push(c);
+        if (distinct.length >= 16) break;
+    }
+
+    // hex로 변환 후 밝기순 정렬
+    const hexColors = distinct.map(c =>
+        '#' + [c.r, c.g, c.b].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('')
+    );
+    hexColors.sort((a, b) => luminance(a) - luminance(b));
+
+    // 변수에 매핑: 어두운 것 → 배경, 밝은 것 → 텍스트
+    return mapColorsToVars(hexColors);
+}
+
+function mapColorsToVars(sortedHexColors) {
+    const vars = getActiveVars();
+    const n = vars.length;
+    const colors = {};
+
+    // 분류: tint(배경) 변수 = 어두운 색, 나머지 = 밝은 색
+    const bgVars = vars.filter(v => v.tint);
+    const fgVars = vars.filter(v => !v.tint);
+
+    // 충분한 색이 없으면 보간
+    while (sortedHexColors.length < n) {
+        const last = sortedHexColors[sortedHexColors.length - 1] || '#888888';
+        const hsl = hexToHSL(last);
+        sortedHexColors.push(hslToHex(hsl.h + 20, hsl.s, Math.min(95, hsl.l + 10)));
+    }
+
+    // 어두운 쪽에서 배경 변수에 할당
+    bgVars.forEach((v, i) => {
+        colors[v.key] = sortedHexColors[i % sortedHexColors.length];
+    });
+
+    // 밝은 쪽에서 전경 변수에 할당
+    const bright = sortedHexColors.slice().reverse();
+    fgVars.forEach((v, i) => {
+        colors[v.key] = bright[i % bright.length];
+    });
+
+    return colors;
+}
+
+// ===== Color Harmony Engine =====
+
+function generateHarmony(baseHex, harmonyType) {
+    const harmony = HARMONY_TYPES.find(h => h.id === harmonyType) || HARMONY_TYPES[0];
+    const base = hexToHSL(baseHex);
+
+    // 기본색 + 하모니 색 생성
+    const hues = [base.h, ...harmony.angles.map(a => (base.h + a) % 360)];
+
+    // 각 hue에서 밝기/채도 변형 생성
+    const palette = [];
+    for (const hue of hues) {
+        // 어두운 버전 (배경용)
+        palette.push(hslToHex(hue, Math.max(15, base.s * 0.5), Math.max(8, base.l * 0.25)));
+        palette.push(hslToHex(hue, Math.max(10, base.s * 0.4), Math.max(5, base.l * 0.2)));
+        // 중간 버전 (보더/인용)
+        palette.push(hslToHex(hue, base.s * 0.7, base.l * 0.6));
+        // 밝은 버전 (텍스트용)
+        palette.push(hslToHex(hue, Math.min(90, base.s * 0.8), Math.min(92, base.l + 30)));
+    }
+
+    // 밝기순 정렬 후 매핑
+    palette.sort((a, b) => luminance(a) - luminance(b));
+    return mapColorsToVars(palette);
+}
+
 // ===== AI Generation =====
 
 function buildPrompt(mood, existingColors) {
-    const keys = VAR_MAP.map(v => `"${v.key}"`).join(', ');
+    const vars = getActiveVars();
+    const keys = vars.map(v => `"${v.key}"`).join(', ');
 
     if (existingColors) {
-        // 수정 모드: 기존 팔레트 + 수정 지시
         const currentJson = JSON.stringify(existingColors, null, 2);
         return [
             'You are a UI color palette designer for a chat application.',
@@ -159,13 +365,12 @@ function buildPrompt(mood, existingColors) {
         ].join('\n');
     }
 
-    // 새 생성 모드
     return [
         'You are a UI color palette designer for a chat application.',
         `Given the mood/atmosphere: "${mood}"`,
         `Generate a cohesive color palette. Return ONLY a raw JSON object with these exact keys: ${keys}.`,
         'ALL values must be hex colors in #RRGGBB format. Do NOT use rgba() or rgb().',
-        'Ensure good contrast: text colors (bodyColor, quoteColor, emColor) must be readable against background colors (blurTintColor, chatTintColor, userMesColor, botMesColor).',
+        'Ensure good contrast: text colors must be readable against background colors.',
         'Match the brightness and saturation to the mood described.',
         'No markdown, no backticks, no explanation. Only the raw JSON object.',
     ].join('\n');
@@ -178,7 +383,6 @@ async function generateColors(mood, existingColors) {
     let switched = false;
 
     try {
-        // 선택된 프로필로 전환 (현재와 다를 때만)
         if (targetProfile && targetProfile !== originalProfile) {
             switched = await switchProfile(targetProfile);
         }
@@ -190,23 +394,17 @@ async function generateColors(mood, existingColors) {
 
         const prompt = buildPrompt(mood, existingColors);
         const result = await context.generateQuietPrompt(prompt, false, false);
+        if (!result) throw new Error('AI 응답이 비어있습니다.');
 
-        if (!result) {
-            throw new Error('AI 응답이 비어있습니다.');
-        }
-
-        // JSON 추출
         const jsonMatch = result.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            throw new Error(`JSON을 찾을 수 없습니다.\n응답: ${result.slice(0, 200)}`);
-        }
+        if (!jsonMatch) throw new Error(`JSON을 찾을 수 없습니다.\n응답: ${result.slice(0, 200)}`);
 
         const colors = JSON.parse(jsonMatch[0]);
-        const valid = VAR_MAP.some(v => colors[v.key]);
+        const vars = getActiveVars();
+        const valid = vars.some(v => colors[v.key]);
         if (!valid) throw new Error('유효한 색상이 없습니다.');
         return colors;
     } finally {
-        // 원래 프로필로 복귀
         if (switched && originalProfile) {
             await switchProfile(originalProfile);
         }
@@ -254,14 +452,46 @@ function createModal() {
                 <button class="moodlight-close">✕</button>
             </div>
 
-            <div class="moodlight-input-row">
-                <input class="moodlight-mood-input" type="text"
-                    placeholder="분위기 또는 수정 지시 (예: 텍스트 더 밝게)" />
-                <button class="moodlight-generate-btn">생성</button>
+            <!-- Mode Tabs -->
+            <div class="moodlight-tabs">
+                <button class="moodlight-tab active" data-mode="ai">AI 생성</button>
+                <button class="moodlight-tab" data-mode="image">이미지</button>
+                <button class="moodlight-tab" data-mode="harmony">하모니</button>
+            </div>
+
+            <!-- AI Mode -->
+            <div class="moodlight-mode" data-mode="ai">
+                <div class="moodlight-input-row">
+                    <input class="moodlight-mood-input" type="text"
+                        placeholder="분위기 또는 수정 지시 (예: 텍스트 더 밝게)" />
+                    <button class="moodlight-generate-btn">생성</button>
+                </div>
+            </div>
+
+            <!-- Image Mode -->
+            <div class="moodlight-mode" data-mode="image" style="display:none;">
+                <label class="moodlight-dropzone">
+                    <input type="file" accept="image/*" style="display:none;" />
+                    <span class="moodlight-dropzone-text">이미지를 선택하세요</span>
+                </label>
+                <button class="moodlight-extract-btn" disabled>추출</button>
+            </div>
+
+            <!-- Harmony Mode -->
+            <div class="moodlight-mode" data-mode="harmony" style="display:none;">
+                <div class="moodlight-harmony-row">
+                    <div class="moodlight-base-color-wrap">
+                        <div class="moodlight-base-swatch" style="background:#6C8EBF;"></div>
+                        <input type="color" class="moodlight-base-picker" value="#6C8EBF" />
+                    </div>
+                    <select class="moodlight-harmony-type">
+                        ${HARMONY_TYPES.map(h => `<option value="${h.id}">${h.label}</option>`).join('')}
+                    </select>
+                    <button class="moodlight-harmony-btn">생성</button>
+                </div>
             </div>
 
             <div class="moodlight-status"></div>
-
             <div class="moodlight-preview"></div>
 
             <div class="moodlight-actions" style="display:none;">
@@ -272,27 +502,49 @@ function createModal() {
 
             <hr class="moodlight-divider">
 
+            <!-- Variable Management -->
+            <div class="moodlight-var-manager">
+                <div class="moodlight-var-header">
+                    <span>변수 관리</span>
+                    <span class="moodlight-var-toggle-icon">▶</span>
+                </div>
+                <div class="moodlight-var-content" style="display:none;">
+                    <div class="moodlight-var-list"></div>
+                    <div class="moodlight-var-add-row">
+                        <input type="text" class="moodlight-var-add-css" placeholder="--CSS변수명" />
+                        <input type="text" class="moodlight-var-add-label" placeholder="라벨" />
+                        <button class="moodlight-var-add-btn">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="moodlight-divider">
+
             <div class="moodlight-presets-label">저장된 프리셋</div>
             <div class="moodlight-presets-list"></div>
         </div>
     `;
 
-    // Close handlers
-    backdrop.querySelector('.moodlight-close').addEventListener('click', () => closeModal());
-    backdrop.addEventListener('click', (e) => {
-        if (e.target === backdrop) closeModal();
+    // --- Close ---
+    backdrop.querySelector('.moodlight-close').addEventListener('click', closeModal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+
+    // --- Tabs ---
+    backdrop.querySelectorAll('.moodlight-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            backdrop.querySelectorAll('.moodlight-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            backdrop.querySelectorAll('.moodlight-mode').forEach(m => m.style.display = 'none');
+            backdrop.querySelector(`.moodlight-mode[data-mode="${tab.dataset.mode}"]`).style.display = '';
+        });
     });
 
-    // Generate
-    const input = backdrop.querySelector('.moodlight-mood-input');
+    // --- AI Mode ---
+    const aiInput = backdrop.querySelector('.moodlight-mood-input');
     const genBtn = backdrop.querySelector('.moodlight-generate-btn');
 
-    function updateGenBtn() {
-        genBtn.textContent = currentColors ? '수정' : '생성';
-    }
-
-    async function onGenerate() {
-        const mood = input.value.trim();
+    async function onAIGenerate() {
+        const mood = aiInput.value.trim();
         if (!mood) return;
         genBtn.disabled = true;
         const isRefine = !!currentColors;
@@ -310,22 +562,70 @@ function createModal() {
         genBtn.disabled = false;
     }
 
-    genBtn.addEventListener('click', onGenerate);
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            onGenerate();
+    genBtn.addEventListener('click', onAIGenerate);
+    aiInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onAIGenerate(); }
+    });
+
+    // --- Image Mode ---
+    const fileInput = backdrop.querySelector('.moodlight-dropzone input[type="file"]');
+    const extractBtn = backdrop.querySelector('.moodlight-extract-btn');
+    const dropzoneText = backdrop.querySelector('.moodlight-dropzone-text');
+    let selectedFile = null;
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+            selectedFile = fileInput.files[0];
+            dropzoneText.textContent = selectedFile.name;
+            extractBtn.disabled = false;
         }
     });
 
-    // Action buttons
+    extractBtn.addEventListener('click', async () => {
+        if (!selectedFile) return;
+        extractBtn.disabled = true;
+        setStatus('<span class="moodlight-spinner"></span>색상 추출 중...', backdrop);
+        try {
+            const colors = await extractColorsFromImage(selectedFile);
+            currentColors = colors;
+            renderPreview(colors, backdrop);
+            backdrop.querySelector('.moodlight-actions').style.display = 'flex';
+            setStatus('', backdrop);
+            updateGenBtn();
+        } catch (e) {
+            setStatus(`⚠ ${e.message}`, backdrop);
+        }
+        extractBtn.disabled = false;
+    });
+
+    // --- Harmony Mode ---
+    const baseSwatch = backdrop.querySelector('.moodlight-base-swatch');
+    const basePicker = backdrop.querySelector('.moodlight-base-picker');
+    const harmonySelect = backdrop.querySelector('.moodlight-harmony-type');
+    const harmonyBtn = backdrop.querySelector('.moodlight-harmony-btn');
+
+    basePicker.addEventListener('input', () => {
+        baseSwatch.style.background = basePicker.value;
+    });
+    baseSwatch.addEventListener('click', () => basePicker.click());
+
+    harmonyBtn.addEventListener('click', () => {
+        const colors = generateHarmony(basePicker.value, harmonySelect.value);
+        currentColors = colors;
+        renderPreview(colors, backdrop);
+        backdrop.querySelector('.moodlight-actions').style.display = 'flex';
+        setStatus('', backdrop);
+        updateGenBtn();
+    });
+
+    // --- Actions ---
     backdrop.querySelector('[data-action="apply"]').addEventListener('click', () => {
         if (currentColors) injectColors(currentColors);
     });
 
     backdrop.querySelector('[data-action="save"]').addEventListener('click', () => {
         if (!currentColors) return;
-        const name = input.value.trim() || '무제';
+        const name = aiInput.value.trim() || '무제';
         savePreset(name, currentColors);
         renderPresetList(backdrop);
     });
@@ -340,6 +640,33 @@ function createModal() {
         updateGenBtn();
     });
 
+    // --- Variable Manager ---
+    const varHeader = backdrop.querySelector('.moodlight-var-header');
+    const varContent = backdrop.querySelector('.moodlight-var-content');
+    const varIcon = backdrop.querySelector('.moodlight-var-toggle-icon');
+
+    varHeader.addEventListener('click', () => {
+        const open = varContent.style.display !== 'none';
+        varContent.style.display = open ? 'none' : 'flex';
+        varIcon.textContent = open ? '▶' : '▼';
+        if (!open) renderVarList(backdrop);
+    });
+
+    backdrop.querySelector('.moodlight-var-add-btn').addEventListener('click', () => {
+        const cssInput = backdrop.querySelector('.moodlight-var-add-css');
+        const labelInput = backdrop.querySelector('.moodlight-var-add-label');
+        const css = cssInput.value.trim();
+        const label = labelInput.value.trim();
+        if (!css.startsWith('--')) { setStatus('⚠ --로 시작하는 CSS 변수명을 입력하세요', backdrop); return; }
+        if (addCustomVar(css, label)) {
+            cssInput.value = '';
+            labelInput.value = '';
+            renderVarList(backdrop);
+        } else {
+            setStatus('⚠ 이미 존재하는 변수입니다', backdrop);
+        }
+    });
+
     document.documentElement.appendChild(backdrop);
     modalEl = backdrop;
     return backdrop;
@@ -348,18 +675,34 @@ function createModal() {
 function renderPreview(colors, container) {
     const previewEl = container.querySelector('.moodlight-preview');
     previewEl.innerHTML = '';
+    const vars = getActiveVars();
 
-    for (const v of VAR_MAP) {
+    for (const v of vars) {
         const color = colors[v.key];
         if (!color) continue;
+        const enabled = isVarEnabled(v.css);
 
         const row = document.createElement('div');
-        row.className = 'moodlight-preview-row';
+        row.className = 'moodlight-preview-row' + (enabled ? '' : ' disabled');
 
+        // Toggle
+        const toggle = document.createElement('label');
+        toggle.className = 'moodlight-toggle';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = enabled;
+        checkbox.addEventListener('change', () => {
+            toggleVar(v.css, checkbox.checked);
+            row.classList.toggle('disabled', !checkbox.checked);
+        });
+        const slider = document.createElement('span');
+        slider.className = 'moodlight-toggle-slider';
+        toggle.append(checkbox, slider);
+
+        // Swatch
         const swatch = document.createElement('div');
         swatch.className = 'moodlight-swatch';
         swatch.style.background = color;
-
         const picker = document.createElement('input');
         picker.type = 'color';
         picker.value = toHex(color);
@@ -369,12 +712,50 @@ function renderPreview(colors, container) {
         });
         swatch.appendChild(picker);
 
+        // Label
         const label = document.createElement('span');
         label.className = 'moodlight-var-name';
         label.textContent = v.label;
 
-        row.append(swatch, label);
+        row.append(toggle, swatch, label);
         previewEl.appendChild(row);
+    }
+}
+
+function renderVarList(container) {
+    const listEl = container.querySelector('.moodlight-var-list');
+    listEl.innerHTML = '';
+    const vars = getActiveVars();
+
+    for (const v of vars) {
+        const item = document.createElement('div');
+        item.className = 'moodlight-var-item';
+
+        const toggle = document.createElement('label');
+        toggle.className = 'moodlight-toggle';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = isVarEnabled(v.css);
+        cb.addEventListener('change', () => toggleVar(v.css, cb.checked));
+        const sl = document.createElement('span');
+        sl.className = 'moodlight-toggle-slider';
+        toggle.append(cb, sl);
+
+        const name = document.createElement('span');
+        name.className = 'moodlight-var-item-name';
+        name.textContent = `${v.label} (${v.css})`;
+
+        item.append(toggle, name);
+
+        if (v.custom) {
+            const del = document.createElement('button');
+            del.className = 'moodlight-var-del';
+            del.textContent = '✕';
+            del.addEventListener('click', () => { removeCustomVar(v.css); renderVarList(container); });
+            item.appendChild(del);
+        }
+
+        listEl.appendChild(item);
     }
 }
 
@@ -395,8 +776,7 @@ function renderPresetList(container) {
 
         const swatches = document.createElement('div');
         swatches.className = 'moodlight-preset-swatches';
-        const previewKeys = ['blurTintColor', 'bodyColor', 'userMesColor', 'botMesColor'];
-        for (const k of previewKeys) {
+        for (const k of ['blurTintColor', 'bodyColor', 'userMesColor', 'botMesColor']) {
             if (p.colors[k]) {
                 const mini = document.createElement('div');
                 mini.className = 'moodlight-preset-mini-swatch';
@@ -412,11 +792,7 @@ function renderPresetList(container) {
         const del = document.createElement('button');
         del.className = 'moodlight-preset-delete';
         del.textContent = '✕';
-        del.addEventListener('click', (e) => {
-            e.stopPropagation();
-            deletePreset(p.id);
-            renderPresetList(container);
-        });
+        del.addEventListener('click', e => { e.stopPropagation(); deletePreset(p.id); renderPresetList(container); });
 
         item.append(swatches, name, del);
         item.addEventListener('click', () => {
@@ -425,6 +801,7 @@ function renderPresetList(container) {
             renderPreview(p.colors, container);
             container.querySelector('.moodlight-actions').style.display = 'flex';
             renderPresetList(container);
+            updateGenBtn();
         });
 
         listEl.appendChild(item);
@@ -435,45 +812,30 @@ function setStatus(html, container) {
     container.querySelector('.moodlight-status').innerHTML = html;
 }
 
+function updateGenBtn() {
+    if (!modalEl) return;
+    const btn = modalEl.querySelector('.moodlight-generate-btn');
+    if (btn) btn.textContent = currentColors ? '수정' : '생성';
+}
+
 function openModal() {
     const m = createModal();
     renderPresetList(m);
-    requestAnimationFrame(() => {
-        m.classList.add('active');
-    });
+    updateGenBtn();
+    requestAnimationFrame(() => m.classList.add('active'));
 }
 
 function closeModal() {
-    if (modalEl) {
-        modalEl.classList.remove('active');
-    }
+    if (modalEl) modalEl.classList.remove('active');
 }
 
-// ===== Helpers =====
-
-function toHex(color) {
-    try {
-        const temp = document.createElement('div');
-        temp.style.color = color;
-        document.body.appendChild(temp);
-        const computed = getComputedStyle(temp).color;
-        document.body.removeChild(temp);
-        const match = computed.match(/\d+/g);
-        if (match) {
-            const [r, g, b] = match.map(Number);
-            return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
-        }
-    } catch {}
-    return '#888888';
-}
+// ===== Settings Panel =====
 
 function populateProfileDropdown() {
     const select = document.getElementById('moodlight-profile-select');
     if (!select) return;
-
     const profiles = getConnectionProfiles();
     const saved = settings().selectedProfile;
-
     select.innerHTML = '<option value="">현재 연결 사용</option>';
     for (const p of profiles) {
         const opt = document.createElement('option');
@@ -483,8 +845,6 @@ function populateProfileDropdown() {
         select.appendChild(opt);
     }
 }
-
-// ===== Settings Panel UI =====
 
 function createSettingsUI() {
     const html = `
@@ -502,25 +862,15 @@ function createSettingsUI() {
                         border-radius:5px; background:transparent; color:var(--SmartThemeBodyColor);
                         cursor:pointer; text-shadow:none;">↻</button>
                 </div>
-
                 <button class="moodlight-open-btn menu_button">MoodLight 열기</button>
             </div>
         </div>
     `;
 
     $('#extensions_settings2').append(html);
-
-    // Profile select
     populateProfileDropdown();
-    $('#moodlight-profile-select').on('change', function () {
-        settings().selectedProfile = $(this).val();
-        save();
-    });
-
-    // Refresh profiles button
+    $('#moodlight-profile-select').on('change', function () { settings().selectedProfile = $(this).val(); save(); });
     $('#moodlight-refresh-profiles').on('click', populateProfileDropdown);
-
-    // Open modal button
     $('#moodlight-settings .moodlight-open-btn').on('click', openModal);
 }
 
@@ -530,7 +880,6 @@ function createSettingsUI() {
     loadSettings();
     createSettingsUI();
 
-    // Re-apply active preset on load
     const s = settings();
     if (s.activePresetId) {
         const preset = s.presets.find(p => p.id === s.activePresetId);
