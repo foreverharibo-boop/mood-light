@@ -583,7 +583,13 @@ function createModal() {
 
             <hr class="moodlight-divider">
 
-            <div class="moodlight-presets-label">저장된 프리셋</div>
+            <div class="moodlight-presets-header">
+                <span class="moodlight-presets-label">저장된 프리셋</span>
+                <div class="moodlight-presets-actions">
+                    <button class="moodlight-export-btn" title="내보내기">↓</button>
+                    <label class="moodlight-import-btn" title="가져오기">↑<input type="file" accept=".json" style="display:none;" /></label>
+                </div>
+            </div>
             <div class="moodlight-presets-list"></div>
         </div>
     `;
@@ -730,6 +736,21 @@ function createModal() {
         }
     });
 
+    // --- Export / Import ---
+    backdrop.querySelector('.moodlight-export-btn').addEventListener('click', exportPresets);
+    backdrop.querySelector('.moodlight-import-btn input').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+            const count = await importPresets(file);
+            setStatus(`${count}개 프리셋 가져옴`, backdrop);
+            renderPresetList(backdrop);
+        } catch (err) {
+            setStatus(`⚠ ${err.message}`, backdrop);
+        }
+        e.target.value = '';
+    });
+
     document.documentElement.appendChild(backdrop);
     modalEl = backdrop;
     return backdrop;
@@ -834,9 +855,11 @@ function renderPresetList(container) {
 
     listEl.innerHTML = '';
     for (const p of presets) {
+        const isActive = p.id === activeId;
         const item = document.createElement('div');
-        item.className = 'moodlight-preset-item' + (p.id === activeId ? ' active' : '');
+        item.className = 'moodlight-preset-item' + (isActive ? ' active' : '');
 
+        // 스워치
         const swatches = document.createElement('div');
         swatches.className = 'moodlight-preset-swatches';
         for (const k of ['blurTintColor', 'bodyColor', 'userMesColor', 'botMesColor']) {
@@ -848,12 +871,11 @@ function renderPresetList(container) {
             }
         }
 
+        // 이름 (클릭 → 수정)
         const name = document.createElement('span');
         name.className = 'moodlight-preset-name';
         name.textContent = p.name;
-
-        // 더블클릭으로 이름 수정
-        name.addEventListener('dblclick', (e) => {
+        name.addEventListener('click', (e) => {
             e.stopPropagation();
             const input = document.createElement('input');
             input.type = 'text';
@@ -864,8 +886,7 @@ function renderPresetList(container) {
             input.select();
 
             function commitRename() {
-                const newName = input.value.trim() || p.name;
-                p.name = newName;
+                p.name = input.value.trim() || p.name;
                 save();
                 renderPresetList(container);
             }
@@ -876,23 +897,77 @@ function renderPresetList(container) {
             });
         });
 
+        // 적용/해제 버튼
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'moodlight-preset-apply' + (isActive ? ' applied' : '');
+        applyBtn.textContent = isActive ? '해제' : '적용';
+        applyBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (isActive) {
+                // 적용 해제
+                clearInjection();
+                currentColors = null;
+                container.querySelector('.moodlight-preview').innerHTML = '';
+                container.querySelector('.moodlight-actions').style.display = 'none';
+                updateGenBtn();
+            } else {
+                // 적용
+                applyPreset(p.id);
+                currentColors = { ...p.colors };
+                renderPreview(p.colors, container);
+                container.querySelector('.moodlight-actions').style.display = 'flex';
+                updateGenBtn();
+            }
+            renderPresetList(container);
+        });
+
+        // 삭제
         const del = document.createElement('button');
         del.className = 'moodlight-preset-delete';
         del.textContent = '✕';
         del.addEventListener('click', e => { e.stopPropagation(); deletePreset(p.id); renderPresetList(container); });
 
-        item.append(swatches, name, del);
-        item.addEventListener('click', () => {
-            applyPreset(p.id);
-            currentColors = { ...p.colors };
-            renderPreview(p.colors, container);
-            container.querySelector('.moodlight-actions').style.display = 'flex';
-            renderPresetList(container);
-            updateGenBtn();
-        });
-
+        item.append(swatches, name, applyBtn, del);
         listEl.appendChild(item);
     }
+}
+
+// ===== Export / Import =====
+
+function exportPresets() {
+    const data = JSON.stringify(settings().presets, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'moodlight-presets.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importPresets(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const imported = JSON.parse(reader.result);
+                if (!Array.isArray(imported)) throw new Error('배열 형식이 아닙니다.');
+                const s = settings();
+                for (const p of imported) {
+                    if (p.colors && typeof p.colors === 'object') {
+                        p.id = p.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+                        s.presets.push(p);
+                    }
+                }
+                save();
+                resolve(imported.length);
+            } catch (e) {
+                reject(e);
+            }
+        };
+        reader.onerror = () => reject(new Error('파일 읽기 실패'));
+        reader.readAsText(file);
+    });
 }
 
 function setStatus(html, container) {

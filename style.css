@@ -423,18 +423,46 @@
 }
 
 /* --- Presets --- */
+.moodlight-presets-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .moodlight-presets-label {
     font-size: 11px;
     font-weight: 500;
     color: var(--SmartThemeBodyColor);
 }
 
+.moodlight-presets-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.moodlight-export-btn,
+.moodlight-import-btn {
+    padding: 2px 8px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.15s;
+}
+
+.moodlight-export-btn:hover,
+.moodlight-import-btn:hover {
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
+}
+
 .moodlight-presets-list {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    min-height: 120px;
-    max-height: 40vh;
+    min-height: 180px;
+    max-height: 55vh;
     overflow-y: auto;
 }
 
@@ -445,14 +473,9 @@
     padding: 8px 10px;
     border: 1px solid var(--SmartThemeBorderColor);
     border-radius: 6px;
-    cursor: pointer;
     font-size: 12px;
     transition: background 0.15s;
     flex-shrink: 0;
-}
-
-.moodlight-preset-item:hover {
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 8%, transparent);
 }
 
 .moodlight-preset-item.active {
@@ -478,6 +501,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--SmartThemeBodyColor);
+    cursor: text;
 }
 
 /* 프리셋 이름 수정 입력 */
@@ -490,6 +514,29 @@
     color: var(--SmartThemeBodyColor);
     font-size: 12px;
     outline: none;
+}
+
+/* 적용/해제 버튼 */
+.moodlight-preset-apply {
+    padding: 3px 8px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    font-size: 10px;
+    white-space: nowrap;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+
+.moodlight-preset-apply:hover {
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
+}
+
+.moodlight-preset-apply.applied {
+    border-color: var(--SmartThemeEmColor, var(--SmartThemeBodyColor));
+    background: color-mix(in srgb, var(--SmartThemeEmColor, var(--SmartThemeBodyColor)) 15%, transparent);
 }
 
 .moodlight-preset-delete {
