@@ -37,7 +37,9 @@ const DIRECT_RULES = {
     },
     iriverIcon: (hex) => {
         return [
+            `.drawer-icon.closedIcon::before { color: ${hex} !important; }`,
             `#completion_prompt_manager, #completion_prompt_manager_list, .completion_prompt_manager_prompt_disabled, .prompt-manager-inspect-action { color: ${hex} !important; }`,
+            `.mes_reasoning_actions, .mes_reasoning_actions .menu_button, .mes_reasoning_actions .mes_button, .mes_reasoning_actions .edit_button { color: ${hex} !important; }`,
             `.mes_block .ch_name .timestamp { color: ${hex} !important; }`,
             `.swipes-counter { color: ${hex} !important; }`,
             `.swipe_left, .swipe_right { color: ${hex} !important; }`,
