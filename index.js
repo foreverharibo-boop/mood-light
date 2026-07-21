@@ -110,13 +110,17 @@ function getStyleEl() {
     if (!el) { el = document.createElement('style'); el.id = STYLE_ID; document.documentElement.appendChild(el); }
     return el;
 }
+const _alphaCache = {};
 function readAlpha(css) {
+    if (_alphaCache[css] !== undefined) return _alphaCache[css];
     const el = document.getElementById(STYLE_ID), bk = el?.textContent || '';
     if (el) el.textContent = '';
     const raw = getComputedStyle(document.documentElement).getPropertyValue(css).trim();
     if (el) el.textContent = bk;
     const m = raw.match(/rgba?\([\d.]+,\s*[\d.]+,\s*[\d.]+,\s*([\d.]+)\)/);
-    return m ? parseFloat(m[1]) : 1;
+    const val = m ? parseFloat(m[1]) : 1;
+    _alphaCache[css] = val;
+    return val;
 }
 function hexToRgba(hex, a) {
     const h = hex.replace('#','');
@@ -421,7 +425,12 @@ function renderVars(ct) {
         const item = document.createElement('div'); item.className = 'ml-var-item';
         const tg = document.createElement('label'); tg.className = 'ml-var-toggle';
         const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = isEnabled(v.css);
-        cb.onchange = () => toggleVar(v.css, cb.checked);
+        cb.onchange = () => {
+            toggleVar(v.css, cb.checked);
+            injectColors(currentColors);
+            // 생성탭 컬러 그리드도 동기화
+            if (currentColors) renderColors(currentColors, ct);
+        };
         const sl = document.createElement('span'); sl.className = 'ml-var-slider';
         tg.append(cb, sl);
 
