@@ -14,10 +14,38 @@ const DEFAULT_VARS = [
     { key: 'botMesColor',   css: '--SmartThemeBotMesBlurTintColor',  label: 'Bot',    tint: true },
     { key: 'quoteColor',    css: '--SmartThemeQuoteColor',           label: 'Quote' },
     { key: 'emColor',       css: '--SmartThemeEmColor',              label: 'Em' },
-    { key: 'macPen',        css: '--accentColorOverlay',              label: 'Mac_highlighter',      tint: true },
-    { key: 'iriverPen',    css: '--iriver-accent-overlay',           label: 'iRIVER_highlighter',   tint: true },
-    { key: 'iriverIcon',   css: '--iriver-muted',                    label: 'iRIVER_icon',  tint: true },
+    { key: 'macPen',        css: '--accentColorOverlay',              label: 'Mac_highlighter',      direct: true },
+    { key: 'iriverPen',    css: '--iriver-accent-overlay',           label: 'iRIVER_highlighter',   direct: true },
+    { key: 'iriverIcon',   css: '--iriver-muted',                    label: 'iRIVER_icon',          direct: true },
 ];
+
+// 테마 전용 변수 → 직접 셀렉터 매핑
+const DIRECT_RULES = {
+    macPen: (hex) => {
+        const light = hexToRgba(hex, 0.08);
+        return [
+            `.mes_text em { background-color: ${light} !important; }`,
+            `.mes_text blockquote { background-color: ${light} !important; }`,
+        ].join('\n');
+    },
+    iriverPen: (hex) => {
+        const overlay = hexToRgba(hex, 0.28);
+        return [
+            `.mes_text q { background-color: ${overlay} !important; }`,
+            `.mes_block .ch_name { background-color: ${hexToRgba(hex, 0.07)} !important; }`,
+        ].join('\n');
+    },
+    iriverIcon: (hex) => {
+        return [
+            `#completion_prompt_manager, #completion_prompt_manager_list, .completion_prompt_manager_prompt_disabled, .prompt-manager-inspect-action { color: ${hex} !important; }`,
+            `.mes_block .ch_name .timestamp { color: ${hex} !important; }`,
+            `.swipes-counter { color: ${hex} !important; }`,
+            `.swipe_left, .swipe_right { color: ${hex} !important; }`,
+            `.mes .mes_buttons .mes_button { color: ${hex} !important; }`,
+            `#leftSendForm > div, #rightSendForm > div, #send_but, #send_form .mes_stop { color: ${hex} !important; }`,
+        ].join('\n');
+    },
+};
 
 const HARMONY_TYPES = [
     { id: 'complementary',       label: '보색',      angles: [180] },
@@ -95,9 +123,18 @@ function hexToRgba(hex, a) {
 function processColor(v, c) { const hex = toHex(c); if (!v.tint) return hex; const a = readAlpha(v.css); return a >= 1 ? hex : hexToRgba(hex, a); }
 function injectColors(colors) {
     if (!colors) return;
-    const lines = getVars().filter(v => colors[v.key] && isEnabled(v.css))
+    const vars = getVars();
+    // 일반 CSS 변수 오버라이드
+    const varLines = vars.filter(v => colors[v.key] && isEnabled(v.css) && !v.direct)
         .map(v => `${v.css}:${processColor(v, colors[v.key])} !important;`);
-    getStyleEl().textContent = lines.length ? `:root{${lines.join('')}}` : '';
+    // 테마 전용 직접 셀렉터 주입
+    const directLines = vars.filter(v => colors[v.key] && isEnabled(v.css) && v.direct && DIRECT_RULES[v.key])
+        .map(v => DIRECT_RULES[v.key](toHex(colors[v.key])));
+
+    let css = '';
+    if (varLines.length) css += `:root{${varLines.join('')}}\n`;
+    if (directLines.length) css += directLines.join('\n');
+    getStyleEl().textContent = css;
     currentColors = { ...colors };
 }
 function clearInjection() {
@@ -324,14 +361,15 @@ function renderColors(colors, ct) {
 
         const sw = document.createElement('div'); sw.className = 'ml-color-swatch'; sw.style.background = c;
         const pk = document.createElement('input'); pk.type = 'color'; pk.value = toHex(c);
-        pk.oninput = () => { sw.style.background = pk.value; currentColors[v.key] = pk.value; };
+        pk.oninput = () => { sw.style.background = pk.value; currentColors[v.key] = pk.value; injectColors(currentColors); };
         sw.appendChild(pk);
 
         const tg = document.createElement('div'); tg.className = 'ml-color-toggle ' + (en ? 'on' : '');
         tg.textContent = en ? '✓' : '';
         tg.onclick = (e) => { e.stopPropagation(); const next = !isEnabled(v.css); toggleVar(v.css, next);
             tg.className = 'ml-color-toggle ' + (next ? 'on' : ''); tg.textContent = next ? '✓' : '';
-            item.classList.toggle('disabled', !next); };
+            item.classList.toggle('disabled', !next);
+            injectColors(currentColors); };
         sw.appendChild(tg);
 
         const lb = document.createElement('div'); lb.className = 'ml-color-label'; lb.textContent = v.label;

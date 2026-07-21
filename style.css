@@ -654,3 +654,10 @@
         font-size: 12px;
     }
 }
+
+/* --- PC --- */
+@media (pointer: fine) {
+    .ml-modal {
+        min-height: 520px;
+    }
+}
