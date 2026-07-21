@@ -28,7 +28,7 @@
 .ml-modal {
     width: 370px;
     max-width: 92vw;
-    height: 80vh;
+    max-height: 80vh;
     background: #ffffff;
     border-radius: 14px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.18);
@@ -103,7 +103,7 @@
 
 /* --- Scroll Body --- */
 .ml-body {
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
