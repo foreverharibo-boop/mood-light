@@ -372,6 +372,9 @@
 .moodlight-var-content {
     flex-direction: column;
     gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .moodlight-var-list {
@@ -414,16 +417,21 @@
 .moodlight-var-add-row {
     display: flex;
     gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .moodlight-var-add-row input {
     flex: 1;
+    min-width: 0;
     padding: 4px 6px;
     border: 1px solid var(--SmartThemeBorderColor);
     border-radius: 5px;
     background: transparent;
     color: var(--SmartThemeBodyColor);
     font-size: 10px;
+    box-sizing: border-box;
 }
 
 .moodlight-var-add-btn {
