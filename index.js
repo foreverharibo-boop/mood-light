@@ -14,27 +14,11 @@ const DEFAULT_VARS = [
     { key: 'botMesColor',   css: '--SmartThemeBotMesBlurTintColor',  label: 'Bot',    tint: true },
     { key: 'quoteColor',    css: '--SmartThemeQuoteColor',           label: 'Quote' },
     { key: 'emColor',       css: '--SmartThemeEmColor',              label: 'Em' },
-    { key: 'macPen',        css: '--accentColorOverlay',              label: 'Mac_highlighter',      direct: true },
-    { key: 'iriverPen',    css: '--iriver-accent-overlay',           label: 'iRIVER_highlighter',   direct: true },
     { key: 'iriverIcon',   css: '--iriver-muted',                    label: 'iRIVER_icon',          direct: true },
 ];
 
 // 테마 전용 변수 → 직접 셀렉터 매핑
 const DIRECT_RULES = {
-    macPen: (hex) => {
-        const light = hexToRgba(hex, 0.08);
-        return [
-            `.mes_text em { background-color: ${light} !important; }`,
-            `.mes_text blockquote { background-color: ${light} !important; }`,
-        ].join('\n');
-    },
-    iriverPen: (hex) => {
-        const overlay = hexToRgba(hex, 0.28);
-        return [
-            `.mes_text q { background-color: ${overlay} !important; }`,
-            `.mes_block .ch_name { background-color: ${hexToRgba(hex, 0.07)} !important; }`,
-        ].join('\n');
-    },
     iriverIcon: (hex) => {
         return [
             `.drawer-icon.closedIcon::before { color: ${hex} !important; }`,
