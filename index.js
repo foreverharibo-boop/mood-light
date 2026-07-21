@@ -1024,7 +1024,7 @@ function createSettingsUI() {
                         border-radius:5px; background:transparent; color:var(--SmartThemeBodyColor);
                         cursor:pointer; text-shadow:none;">↻</button>
                 </div>
-                <button class="moodlight-open-btn menu_button" style="width:100%;">MoodLight 열기</button>
+                <button class="moodlight-open-btn menu_button" style="width:60%; margin:4px auto 0;">MoodLight 열기</button>
             </div>
         </div>
     `;
