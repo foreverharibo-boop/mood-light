@@ -586,8 +586,8 @@ function createModal() {
             <div class="moodlight-presets-header">
                 <span class="moodlight-presets-label">저장된 프리셋</span>
                 <div class="moodlight-presets-actions">
-                    <button class="moodlight-export-btn" title="내보내기">↓</button>
-                    <label class="moodlight-import-btn" title="가져오기">↑<input type="file" accept=".json" style="display:none;" /></label>
+                    <button class="moodlight-export-btn" title="내보내기">↑</button>
+                    <label class="moodlight-import-btn" title="가져오기">↓<input type="file" accept=".json" style="display:none;" /></label>
                 </div>
             </div>
             <div class="moodlight-presets-list"></div>
@@ -1024,7 +1024,7 @@ function createSettingsUI() {
                         border-radius:5px; background:transparent; color:var(--SmartThemeBodyColor);
                         cursor:pointer; text-shadow:none;">↻</button>
                 </div>
-                <button class="moodlight-open-btn menu_button">MoodLight 열기</button>
+                <button class="moodlight-open-btn menu_button" style="width:100%;">MoodLight 열기</button>
             </div>
         </div>
     `;
