@@ -405,13 +405,12 @@ function createSettingsUI() {
   <div class="inline-drawer-toggle inline-drawer-header"><b>MoodLight</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div>
   <div class="inline-drawer-content">
     <label style="font-size:11px">연결 프로필</label>
-    <div style="display:flex;gap:4px"><select id="moodlight-profile-select" style="flex:1"></select><button id="moodlight-refresh" style="padding:4px 8px;border:1px solid var(--SmartThemeBorderColor);border-radius:5px;background:transparent;color:var(--SmartThemeBodyColor);cursor:pointer">↻</button></div>
-    <button class="moodlight-open-btn menu_button" style="width:60%">MoodLight 열기</button>
+    <select id="moodlight-profile-select" style="width:100%"></select>
+    <button class="moodlight-open-btn menu_button" style="width:auto;padding:4px 12px;">MoodLight 열기</button>
   </div>
 </div>`);
     populateProfiles();
     $('#moodlight-profile-select').on('change',function(){s().selectedProfile=$(this).val();save();});
-    $('#moodlight-refresh').on('click',populateProfiles);
     $('#moodlight-settings .moodlight-open-btn').on('click',openModal);
 }
 
