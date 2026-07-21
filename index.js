@@ -78,7 +78,7 @@ function isEnabled(css) { return !(s().disabledVars || []).includes(css); }
 function toggleVar(css, on) {
     const d = s(); if (!d.disabledVars) d.disabledVars = [];
     d.disabledVars = on ? d.disabledVars.filter(v => v !== css) : [...d.disabledVars, css];
-    save(); if (currentColors) injectColors(currentColors);
+    save();
 }
 function addVar(css, label) {
     if (getVars().some(v => v.css === css)) return false;
@@ -368,10 +368,17 @@ function renderColors(colors, ct) {
 
         const tg = document.createElement('div'); tg.className = 'ml-color-toggle ' + (en ? 'on' : '');
         tg.textContent = en ? '✓' : '';
-        tg.onclick = (e) => { e.stopPropagation(); const next = !isEnabled(v.css); toggleVar(v.css, next);
-            tg.className = 'ml-color-toggle ' + (next ? 'on' : ''); tg.textContent = next ? '✓' : '';
+        tg.onclick = (e) => {
+            e.stopPropagation();
+            const next = !isEnabled(v.css);
+            toggleVar(v.css, next);
+            tg.className = 'ml-color-toggle ' + (next ? 'on' : '');
+            tg.textContent = next ? '✓' : '';
             item.classList.toggle('disabled', !next);
-            injectColors(currentColors); };
+            if (currentColors) {
+                setTimeout(() => injectColors(currentColors), 0);
+            }
+        };
         sw.appendChild(tg);
 
         const lb = document.createElement('div'); lb.className = 'ml-color-label'; lb.textContent = v.label;
