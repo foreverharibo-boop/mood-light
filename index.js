@@ -14,7 +14,9 @@ const DEFAULT_VARS = [
     { key: 'botMesColor',   css: '--SmartThemeBotMesBlurTintColor',  label: 'Bot',    tint: true },
     { key: 'quoteColor',    css: '--SmartThemeQuoteColor',           label: 'Quote' },
     { key: 'emColor',       css: '--SmartThemeEmColor',              label: 'Em' },
-    { key: 'underlineColor',css: '--accentColorOverlay',              label: 'MacRetro', tint: true },
+    { key: 'macPen',        css: '--accentColorOverlay',              label: 'Mac_highlighter',      tint: true },
+    { key: 'iriverPen',    css: '--iriver-accent-overlay',           label: 'iRIVER_highlighter',   tint: true },
+    { key: 'iriverIcon',   css: '--iriver-muted',                    label: 'iRIVER_icon',  tint: true },
 ];
 
 const HARMONY_TYPES = [
