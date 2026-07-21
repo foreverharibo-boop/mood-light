@@ -178,7 +178,9 @@ function buildPrompt(mood, existing) {
     if(existing){return['You are a UI color palette designer.',`Current palette:\n${JSON.stringify(existing,null,2)}`,`Modify: "${mood}"`,
         'Change only what asked. Keep cohesion.',`Return ONLY raw JSON with keys: ${keys}.`,'Hex #RRGGBB only. No rgba. No markdown.'].join('\n');}
     return['You are a UI color palette designer.',`Mood: "${mood}"`,`Generate palette. Return ONLY raw JSON with keys: ${keys}.`,
-        'Hex #RRGGBB only. No rgba.','CRITICAL: text vs background contrast must be WCAG 4.5:1+.','Match brightness/saturation to mood.','No markdown.'].join('\n');
+        'Hex #RRGGBB only. No rgba.','CRITICAL: text vs background contrast must be WCAG 4.5:1+.',
+        'DEFAULT RULE: Generate BRIGHT, LIGHT palettes by default. Use light pastels or soft whites for backgrounds, dark text for contrast. Only use dark/deep backgrounds when the mood clearly implies darkness, night, or heavy atmosphere.',
+        'Match brightness/saturation to mood.','No markdown.'].join('\n');
 }
 async function generateAI(mood, existing) {
     const cfg=s(), target=cfg.selectedProfile, orig=curProfile(); let switched=false;
