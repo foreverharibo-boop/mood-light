@@ -1,14 +1,6 @@
-/* ===== MoodLight - Theme Color Override Extension ===== */
+/* ===== MoodLight v2 — Clean White UI ===== */
 
-/* --- Settings Panel --- */
-#moodlight-settings label {
-    font-size: 11px;
-    color: var(--SmartThemeBodyColor);
-    margin-bottom: 2px;
-    text-shadow: none;
-}
-
-/* --- Modal Backdrop --- */
+/* --- Backdrop --- */
 .moodlight-backdrop {
     position: fixed !important;
     inset: 0 !important;
@@ -17,7 +9,7 @@
     margin: 0 !important;
     padding: 0 !important;
     transform: none !important;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.45);
     z-index: 99999;
     display: flex !important;
     align-items: center !important;
@@ -32,189 +24,264 @@
     pointer-events: auto;
 }
 
-/* --- Modal --- */
-.moodlight-modal {
-    width: 380px;
+/* --- Modal Shell --- */
+.ml-modal {
+    width: 370px;
     max-width: 92vw;
     height: 80vh;
-    border-radius: 12px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    background: rgb(from var(--SmartThemeBlurTintColor) r g b / 1);
-    color: var(--SmartThemeBodyColor);
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
     display: flex;
     flex-direction: column;
     overflow: hidden !important;
     transform: scale(0.95);
     transition: transform 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #1a1a1a;
 }
 
-.moodlight-modal-scroll {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    padding: 16px;
-    height: 100%;
-    box-sizing: border-box;
-    width: 100%;
-}
-
-.moodlight-modal-scroll > * + * {
-    margin-top: 10px;
-}
-
-.moodlight-backdrop.active .moodlight-modal {
+.moodlight-backdrop.active .ml-modal {
     transform: scale(1);
 }
 
-.moodlight-modal * {
+.ml-modal * {
     text-shadow: none !important;
+    box-sizing: border-box;
 }
 
 /* --- Header --- */
-.moodlight-header {
+.ml-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0;
 }
 
-.moodlight-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--SmartThemeBodyColor);
+.ml-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.3px;
 }
 
-.moodlight-close {
+.ml-header-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.ml-icon-btn {
+    background: none;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    color: #666;
+    cursor: pointer;
+    padding: 4px 7px;
+    font-size: 12px;
+    transition: all 0.15s;
+}
+
+.ml-icon-btn:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.ml-close {
     background: none;
     border: none;
-    color: var(--SmartThemeBodyColor);
-    font-size: 18px;
+    color: #999;
+    font-size: 20px;
     cursor: pointer;
-    padding: 0 4px;
+    padding: 0 2px;
+    line-height: 1;
 }
 
-/* --- Tabs --- */
-.moodlight-tabs {
+.ml-close:hover { color: #333; }
+
+/* --- Scroll Body --- */
+.ml-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* --- Generation Section --- */
+.ml-section {
+    padding: 12px 16px;
+}
+
+.ml-section + .ml-section {
+    border-top: 1px solid #f0f0f0;
+}
+
+/* Tabs */
+.ml-tabs {
     display: flex;
-    gap: 4px;
+    gap: 0;
+    background: #f3f3f3;
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 10px;
 }
 
-.moodlight-tab {
+.ml-tab {
     flex: 1;
     padding: 6px 0;
-    border: 1px solid var(--SmartThemeBorderColor);
+    border: none;
     border-radius: 6px;
     background: transparent;
-    color: var(--SmartThemeBodyColor);
+    color: #888;
     cursor: pointer;
     font-size: 11px;
-    transition: background 0.15s;
+    font-weight: 500;
+    transition: all 0.15s;
 }
 
-.moodlight-tab:hover {
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 8%, transparent);
+.ml-tab.active {
+    background: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
-.moodlight-tab.active {
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 15%, transparent);
-    border-color: var(--SmartThemeEmColor, var(--SmartThemeBodyColor));
-}
-
-/* --- AI Mode --- */
-.moodlight-input-row {
+/* Input Row */
+.ml-input-row {
     display: flex;
     gap: 6px;
 }
 
-.moodlight-mood-input {
+.ml-input {
     flex: 1;
-    padding: 6px 10px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--SmartThemeBodyColor);
-    font-size: 11px;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fafafa;
+    color: #1a1a1a;
+    font-size: 12px;
     outline: none;
-    resize: none;
+    transition: border-color 0.15s;
 }
 
-.moodlight-mood-input::placeholder {
-    color: color-mix(in srgb, var(--SmartThemeBodyColor) 40%, transparent);
-}
+.ml-input:focus { border-color: #aaa; }
+.ml-input::placeholder { color: #bbb; }
 
-.moodlight-generate-btn,
-.moodlight-extract-btn,
-.moodlight-harmony-btn {
-    padding: 6px 12px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--SmartThemeBodyColor);
+.ml-btn {
+    padding: 7px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fafafa;
+    color: #1a1a1a;
     cursor: pointer;
     font-size: 11px;
+    font-weight: 500;
     white-space: nowrap;
-    transition: background 0.15s;
+    transition: all 0.15s;
 }
 
-.moodlight-generate-btn:hover,
-.moodlight-extract-btn:hover,
-.moodlight-harmony-btn:hover {
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
+.ml-btn:hover { background: #eee; }
+.ml-btn:disabled { color: #ccc; cursor: not-allowed; }
+
+.ml-btn-primary {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
 }
 
-.moodlight-generate-btn:disabled,
-.moodlight-extract-btn:disabled {
-    color: color-mix(in srgb, var(--SmartThemeBodyColor) 40%, transparent);
-    cursor: not-allowed;
-}
+.ml-btn-primary:hover { background: #333; }
 
-/* --- Image Mode --- */
-.moodlight-mode[data-mode="image"] {
-    display: flex;
-    gap: 6px;
-    align-items: stretch;
-}
-
-.moodlight-dropzone {
+/* Image Dropzone */
+.ml-dropzone {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 10px;
-    border: 1px dashed var(--SmartThemeBorderColor);
-    border-radius: 6px;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background 0.15s;
     font-size: 11px;
-    color: var(--SmartThemeBodyColor);
-    text-align: center;
+    color: #999;
+    min-width: 0;
+    transition: all 0.15s;
 }
 
-.moodlight-dropzone:hover {
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 5%, transparent);
-}
+.ml-dropzone:hover { border-color: #999; background: #fafafa; }
 
-/* --- Harmony Mode --- */
-.moodlight-harmony-row {
+/* Harmony */
+.ml-harmony-row {
     display: flex;
     gap: 6px;
     align-items: center;
 }
 
-.moodlight-base-color-wrap {
+.ml-base-wrap {
     position: relative;
     width: 32px;
     height: 32px;
     flex-shrink: 0;
 }
 
-.moodlight-base-swatch {
+.ml-base-swatch {
     width: 100%;
     height: 100%;
-    border-radius: 6px;
-    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    border: 1px solid #ddd;
     cursor: pointer;
 }
 
-.moodlight-base-picker {
+.ml-base-picker {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.ml-harmony-select {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fafafa;
+    color: #1a1a1a;
+    font-size: 11px;
+}
+
+/* --- Color Grid --- */
+.ml-colors {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.ml-color-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    position: relative;
+}
+
+.ml-color-item.disabled { opacity: 0.3; }
+
+.ml-color-swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.ml-color-swatch input[type="color"] {
     position: absolute;
     inset: 0;
     opacity: 0;
@@ -222,434 +289,368 @@
     height: 100%;
     cursor: pointer;
     border: none;
-    padding: 0;
 }
 
-.moodlight-harmony-type {
-    flex: 1;
-    padding: 6px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--SmartThemeBodyColor);
-    font-size: 11px;
+.ml-color-label {
+    font-size: 9px;
+    color: #999;
+    text-align: center;
+    line-height: 1.1;
 }
 
-/* --- Color Preview --- */
-.moodlight-preview {
+.ml-color-toggle {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid #fff;
+    background: rgba(0,0,0,0.25);
+    cursor: pointer;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.ml-color-toggle.on { background: #4CAF50; }
+
+/* Actions */
+.ml-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.ml-actions .ml-btn { flex: 1; text-align: center; }
+
+/* Status */
+.ml-status {
+    font-size: 11px;
+    color: #999;
+    text-align: center;
+    min-height: 14px;
+    margin-top: 6px;
+}
+
+.ml-spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #ddd;
+    border-top-color: #666;
+    border-radius: 50%;
+    animation: ml-spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+@keyframes ml-spin { to { transform: rotate(360deg); } }
+
+/* --- Presets Section --- */
+.ml-presets-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.ml-presets-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.ml-presets-tools {
+    display: flex;
     gap: 4px;
 }
 
-.moodlight-preview-row {
+.ml-preset-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.ml-preset {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    transition: opacity 0.15s;
-}
-
-.moodlight-preview-row.disabled {
-    opacity: 0.35;
-}
-
-.moodlight-swatch {
-    width: 24px;
-    height: 24px;
-    border-radius: 5px;
-    border: 1px solid var(--SmartThemeBorderColor);
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    transition: all 0.15s;
+    min-width: 0;
+    overflow: hidden;
     flex-shrink: 0;
-    cursor: pointer;
-    position: relative;
 }
 
-.moodlight-swatch input[type="color"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-    border: none;
-    padding: 0;
+.ml-preset.active { border-color: #1a1a1a; }
+
+.ml-preset-swatches {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
 }
 
-.moodlight-var-name {
-    color: var(--SmartThemeBodyColor);
-    font-family: monospace;
-    font-size: 10px;
+.ml-preset-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+}
+
+.ml-preset-name {
     flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    color: #333;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    cursor: text;
 }
 
-/* --- Toggle Switch --- */
-.moodlight-toggle {
-    position: relative;
-    display: inline-block;
-    width: 28px;
-    height: 14px;
+.ml-preset-name-input {
+    flex: 1;
+    min-width: 0;
+    padding: 2px 6px;
+    border: 1px solid #1a1a1a;
+    border-radius: 4px;
+    background: #fff;
+    color: #1a1a1a;
+    font-size: 12px;
+    outline: none;
+}
+
+.ml-preset-apply {
+    padding: 3px 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    font-size: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.ml-preset-apply:hover { background: #f0f0f0; }
+
+.ml-preset-apply.applied {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+}
+
+.ml-preset-del {
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+
+.ml-preset-del:hover { color: #666; }
+
+.ml-empty {
+    text-align: center;
+    color: #ccc;
+    font-size: 11px;
+    padding: 16px 0;
+}
+
+/* --- Variable Manager (Sub-modal) --- */
+.ml-vars-panel {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    z-index: 2;
+    flex-direction: column;
+}
+
+.ml-vars-panel.open {
+    display: flex;
+}
+
+.ml-vars-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid #eee;
     flex-shrink: 0;
 }
 
-.moodlight-toggle input {
+.ml-vars-back {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #666;
+    padding: 0;
+}
+
+.ml-vars-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.ml-vars-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 12px 16px;
+}
+
+.ml-var-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f5f5f5;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.ml-var-toggle {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.ml-var-toggle input {
     opacity: 0;
     width: 0;
     height: 0;
     position: absolute;
 }
 
-.moodlight-toggle-slider {
+.ml-var-slider {
     position: absolute;
     inset: 0;
-    background: var(--SmartThemeBorderColor);
-    border-radius: 7px;
+    background: #ddd;
+    border-radius: 9px;
     cursor: pointer;
     transition: background 0.2s;
 }
 
-.moodlight-toggle-slider::before {
+.ml-var-slider::before {
     content: '';
     position: absolute;
-    width: 10px;
-    height: 10px;
+    width: 14px;
+    height: 14px;
     left: 2px;
     bottom: 2px;
-    background: var(--SmartThemeBodyColor);
+    background: #fff;
     border-radius: 50%;
     transition: transform 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
 
-.moodlight-toggle input:checked + .moodlight-toggle-slider {
-    background: var(--SmartThemeEmColor, var(--SmartThemeBodyColor));
+.ml-var-toggle input:checked + .ml-var-slider {
+    background: #4CAF50;
 }
 
-.moodlight-toggle input:checked + .moodlight-toggle-slider::before {
+.ml-var-toggle input:checked + .ml-var-slider::before {
     transform: translateX(14px);
 }
 
-/* --- Action Buttons --- */
-.moodlight-actions {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.moodlight-actions button {
+.ml-var-info {
     flex: 1;
-    min-width: 60px;
-    padding: 6px 8px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--SmartThemeBodyColor);
-    cursor: pointer;
-    font-size: 11px;
-    transition: background 0.15s;
+    min-width: 0;
+    overflow: hidden;
 }
 
-.moodlight-actions button:hover {
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
+.ml-var-label {
+    font-size: 12px;
+    color: #333;
 }
 
-/* --- Variable Manager --- */
-.moodlight-var-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    font-size: 11px;
-    color: var(--SmartThemeBodyColor);
-    padding: 2px 0;
-}
-
-.moodlight-var-toggle-icon {
+.ml-var-css {
     font-size: 9px;
-}
-
-.moodlight-var-content {
-    flex-direction: column;
-    gap: 4px;
-    width: 100%;
-    box-sizing: border-box;
-    overflow: hidden;
-}
-
-.moodlight-var-list {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    max-height: 160px;
-    overflow-y: auto;
-}
-
-.moodlight-var-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 10px;
-    padding: 3px 0;
-    min-width: 0;
-    overflow: hidden;
-}
-
-.moodlight-var-item-name {
-    flex: 1;
-    min-width: 0;
-    color: var(--SmartThemeBodyColor);
+    color: #aaa;
     font-family: monospace;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.moodlight-var-del {
+.ml-var-del {
     background: none;
     border: none;
-    color: var(--SmartThemeBodyColor);
-    cursor: pointer;
-    font-size: 12px;
-    padding: 0 4px;
-}
-
-.moodlight-var-add-row {
-    display: flex;
-    gap: 4px;
-    width: 100%;
-    box-sizing: border-box;
-    overflow: hidden;
-}
-
-.moodlight-var-add-row input {
-    flex: 1;
-    min-width: 0;
-    padding: 4px 6px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 5px;
-    background: transparent;
-    color: var(--SmartThemeBodyColor);
-    font-size: 10px;
-    box-sizing: border-box;
-}
-
-.moodlight-var-add-btn {
-    padding: 4px 8px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 5px;
-    background: transparent;
-    color: var(--SmartThemeBodyColor);
-    cursor: pointer;
-    font-size: 12px;
-}
-
-/* --- Presets --- */
-.moodlight-presets-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.moodlight-presets-label {
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--SmartThemeBodyColor);
-}
-
-.moodlight-presets-actions {
-    display: flex;
-    gap: 4px;
-}
-
-.moodlight-export-btn,
-.moodlight-import-btn {
-    padding: 2px 8px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 4px;
-    background: transparent;
-    color: var(--SmartThemeBodyColor);
-    cursor: pointer;
-    font-size: 12px;
-    transition: background 0.15s;
-}
-
-.moodlight-export-btn:hover,
-.moodlight-import-btn:hover {
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
-}
-
-.moodlight-presets-list {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    max-height: 250px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.moodlight-preset-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 6px;
-    font-size: 12px;
-    transition: background 0.15s;
-    flex-shrink: 0;
-    min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
-    overflow: hidden;
-}
-
-.moodlight-preset-item.active {
-    border-color: var(--SmartThemeEmColor, var(--SmartThemeBodyColor));
-}
-
-.moodlight-preset-swatches {
-    display: flex;
-    gap: 2px;
-    flex-shrink: 0;
-}
-
-.moodlight-preset-mini-swatch {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
-    border: 1px solid var(--SmartThemeBorderColor);
-}
-
-.moodlight-preset-name {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--SmartThemeBodyColor);
-    cursor: text;
-}
-
-/* 프리셋 이름 수정 입력 */
-.moodlight-preset-name-input {
-    flex: 1;
-    min-width: 0;
-    padding: 2px 6px;
-    border: 1px solid var(--SmartThemeEmColor, var(--SmartThemeBodyColor));
-    border-radius: 4px;
-    background: transparent;
-    color: var(--SmartThemeBodyColor);
-    font-size: 12px;
-    outline: none;
-    box-sizing: border-box;
-}
-
-/* 적용/해제 버튼 */
-.moodlight-preset-apply {
-    padding: 3px 8px;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 4px;
-    background: transparent;
-    color: var(--SmartThemeBodyColor);
-    cursor: pointer;
-    font-size: 10px;
-    white-space: nowrap;
-    transition: background 0.15s;
-    flex-shrink: 0;
-}
-
-.moodlight-preset-apply:hover {
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
-}
-
-.moodlight-preset-apply.applied {
-    border-color: var(--SmartThemeEmColor, var(--SmartThemeBodyColor));
-    background: color-mix(in srgb, var(--SmartThemeEmColor, var(--SmartThemeBodyColor)) 15%, transparent);
-}
-
-.moodlight-preset-delete {
-    background: none;
-    border: none;
-    color: var(--SmartThemeBodyColor);
+    color: #ccc;
     cursor: pointer;
     font-size: 14px;
-    padding: 0 2px;
+    flex-shrink: 0;
 }
 
-/* --- Status --- */
-.moodlight-status {
+.ml-var-del:hover { color: #666; }
+
+.ml-var-add {
+    display: flex;
+    gap: 4px;
+    padding-top: 10px;
+    margin-top: 6px;
+    border-top: 1px solid #eee;
+}
+
+.ml-var-add input {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fafafa;
+    color: #1a1a1a;
     font-size: 11px;
-    color: var(--SmartThemeBodyColor);
-    text-align: center;
-    min-height: 14px;
+    outline: none;
 }
 
-.moodlight-spinner {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border: 2px solid var(--SmartThemeBorderColor);
-    border-top-color: var(--SmartThemeBodyColor);
-    border-radius: 50%;
-    animation: moodlight-spin 0.6s linear infinite;
-    vertical-align: middle;
-    margin-right: 4px;
+.ml-var-add button {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fafafa;
+    color: #1a1a1a;
+    cursor: pointer;
+    font-size: 12px;
 }
 
-@keyframes moodlight-spin {
-    to { transform: rotate(360deg); }
-}
-
-.moodlight-empty {
-    text-align: center;
-    color: var(--SmartThemeBodyColor);
-    font-size: 11px;
-    padding: 10px 0;
-}
-
-.moodlight-divider {
+/* --- Divider --- */
+.ml-divider {
     border: none;
-    border-top: 1px solid var(--SmartThemeBorderColor);
-    margin: 2px 0;
+    border-top: 1px solid #f0f0f0;
+    margin: 0;
 }
 
 /* --- Mobile --- */
 @media (pointer: coarse) {
-    .moodlight-modal {
-        width: 94vw;
+    .ml-modal { width: 94vw; }
+
+    .ml-color-swatch {
+        border-radius: 10px;
     }
 
-    .moodlight-modal-scroll {
-        padding: 14px;
-    }
-
-    .moodlight-swatch {
-        width: 30px;
-        height: 30px;
-    }
-
-    .moodlight-actions button {
-        padding: 8px;
-    }
-
-    .moodlight-preset-item {
+    .ml-preset {
         padding: 10px;
     }
 
-    .moodlight-preset-mini-swatch {
-        width: 18px;
-        height: 18px;
-    }
-
-    .moodlight-tab {
+    .ml-tab {
         padding: 8px 0;
-    }
-
-    .moodlight-base-color-wrap {
-        width: 36px;
-        height: 36px;
+        font-size: 12px;
     }
 }
