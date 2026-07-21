@@ -124,12 +124,10 @@ function hexToRgba(hex, a) {
 }
 function processColor(v, c) { const hex = toHex(c); if (!v.tint) return hex; const a = readAlpha(v.css); return a >= 1 ? hex : hexToRgba(hex, a); }
 function injectColors(colors) {
-    if (!colors) return;
+    if (!colors) { getStyleEl().textContent = ''; return; }
     const vars = getVars();
-    // 일반 CSS 변수 오버라이드
     const varLines = vars.filter(v => colors[v.key] && isEnabled(v.css) && !v.direct)
         .map(v => `${v.css}:${processColor(v, colors[v.key])} !important;`);
-    // 테마 전용 직접 셀렉터 주입
     const directLines = vars.filter(v => colors[v.key] && isEnabled(v.css) && v.direct && DIRECT_RULES[v.key])
         .map(v => DIRECT_RULES[v.key](toHex(colors[v.key])));
 
@@ -218,13 +216,13 @@ function genHarmony(base, type) {
 function buildPrompt(mood, existing) {
     const keys=getVars().map(v=>`"${v.key}"`).join(', ');
     const highlighterRule = 'HIGHLIGHTER RULE: Keys containing "Pen" or "highlighter" (macPen, iriverPen) must be VERY light pastel colors (lightness 90%+). These are text background overlays — too dark makes text unreadable.';
-    const softnessRule = 'SOFTNESS: If the user mentions soft/light/subtle/연한/연하게/파스텔, push ALL colors significantly lighter and lower saturation. Backgrounds near white, accents as faint pastels.';
+    const pastelRule = 'PASTEL DEFINITION: When the user says 파스텔/pastel/연한/연하게/soft/light/subtle, this means STRICTLY: background colors must have HSL lightness 88-96% and saturation 10-30%. Accent colors lightness 75-90% and saturation 15-40%. NEVER use saturated or vivid colors (saturation above 50%) for pastel requests. Example pastel pink: #F5E0E8 (correct) vs #FF69B4 (WRONG - too vivid).';
     if(existing){return['You are a UI color palette designer.',`Current palette:\n${JSON.stringify(existing,null,2)}`,`Modify: "${mood}"`,
-        'Change only what asked. Keep cohesion.',highlighterRule,softnessRule,`Return ONLY raw JSON with keys: ${keys}.`,'Hex #RRGGBB only. No rgba. No markdown.'].join('\n');}
+        'Change only what asked. Keep cohesion.',highlighterRule,pastelRule,`Return ONLY raw JSON with keys: ${keys}.`,'Hex #RRGGBB only. No rgba. No markdown.'].join('\n');}
     return['You are a UI color palette designer.',`Mood: "${mood}"`,`Generate palette. Return ONLY raw JSON with keys: ${keys}.`,
         'Hex #RRGGBB only. No rgba.','CRITICAL: text vs background contrast must be WCAG 4.5:1+.',
         'DEFAULT RULE: Generate BRIGHT, LIGHT palettes by default. Use light pastels or soft whites for backgrounds, dark text for contrast. Only use dark/deep backgrounds when the mood clearly implies darkness, night, or heavy atmosphere.',
-        highlighterRule,softnessRule,
+        highlighterRule,pastelRule,
         'Match brightness/saturation to mood.','No markdown.'].join('\n');
 }
 async function generateAI(mood, existing) {
@@ -375,9 +373,7 @@ function renderColors(colors, ct) {
             tg.className = 'ml-color-toggle ' + (next ? 'on' : '');
             tg.textContent = next ? '✓' : '';
             item.classList.toggle('disabled', !next);
-            if (currentColors) {
-                setTimeout(() => injectColors(currentColors), 0);
-            }
+            injectColors(currentColors);
         };
         sw.appendChild(tg);
 
