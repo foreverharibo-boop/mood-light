@@ -14,7 +14,7 @@ const DEFAULT_VARS = [
     { key: 'botMesColor',   css: '--SmartThemeBotMesBlurTintColor',  label: 'Bot',    tint: true },
     { key: 'quoteColor',    css: '--SmartThemeQuoteColor',           label: 'Quote' },
     { key: 'emColor',       css: '--SmartThemeEmColor',              label: 'Em' },
-    { key: 'underlineColor',css: '--SmartThemeUnderlineColor',       label: 'Marker' },
+    { key: 'underlineColor',css: '--accentColorOverlay',              label: 'MacRetro', tint: true },
 ];
 
 const HARMONY_TYPES = [
