@@ -203,15 +203,13 @@ function genHarmony(base, type) {
 // ========== AI GENERATION ==========
 function buildPrompt(mood, existing) {
     const keys=getVars().map(v=>`"${v.key}"`).join(', ');
-    const highlighterRule = 'HIGHLIGHTER RULE: Keys containing "Pen" or "highlighter" (macPen, iriverPen) must be VERY light pastel colors (lightness 90%+). These are text background overlays — too dark makes text unreadable.';
-    const pastelRule = 'PASTEL DEFINITION: When the user says 파스텔/pastel/연한/연하게/soft/light/subtle, this means STRICTLY: background colors must have HSL lightness 88-96% and saturation 10-30%. Accent colors lightness 75-90% and saturation 15-40%. NEVER use saturated or vivid colors (saturation above 50%) for pastel requests. Example pastel pink: #F5E0E8 (correct) vs #FF69B4 (WRONG - too vivid).';
     if(existing){return['You are a UI color palette designer.',`Current palette:\n${JSON.stringify(existing,null,2)}`,`Modify: "${mood}"`,
-        'Change only what asked. Keep cohesion.',highlighterRule,pastelRule,`Return ONLY raw JSON with keys: ${keys}.`,'Hex #RRGGBB only. No rgba. No markdown.'].join('\n');}
+        'Change only what asked. Keep cohesion.',`Return ONLY raw JSON with keys: ${keys}.`,'Hex #RRGGBB only. No rgba. No markdown.'].join('\n');}
     return['You are a UI color palette designer.',`Mood: "${mood}"`,`Generate palette. Return ONLY raw JSON with keys: ${keys}.`,
-        'Hex #RRGGBB only. No rgba.','CRITICAL: text vs background contrast must be WCAG 4.5:1+.',
-        'DEFAULT RULE: Generate BRIGHT, LIGHT palettes by default. Use light pastels or soft whites for backgrounds, dark text for contrast. Only use dark/deep backgrounds when the mood clearly implies darkness, night, or heavy atmosphere.',
-        highlighterRule,pastelRule,
-        'Match brightness/saturation to mood.','No markdown.'].join('\n');
+        'Hex #RRGGBB only. No rgba.',
+        'Keep text readable against backgrounds.',
+        'Default to bright, light palettes unless the mood clearly implies darkness.',
+        'No markdown, no explanation. JSON only.'].join('\n');
 }
 async function generateAI(mood, existing) {
     const cfg=s(), target=cfg.selectedProfile, orig=curProfile(); let switched=false;
