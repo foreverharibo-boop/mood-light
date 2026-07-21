@@ -852,6 +852,30 @@ function renderPresetList(container) {
         name.className = 'moodlight-preset-name';
         name.textContent = p.name;
 
+        // 더블클릭으로 이름 수정
+        name.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'moodlight-preset-name-input';
+            input.value = p.name;
+            name.replaceWith(input);
+            input.focus();
+            input.select();
+
+            function commitRename() {
+                const newName = input.value.trim() || p.name;
+                p.name = newName;
+                save();
+                renderPresetList(container);
+            }
+            input.addEventListener('blur', commitRename);
+            input.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+                if (ev.key === 'Escape') { input.value = p.name; input.blur(); }
+            });
+        });
+
         const del = document.createElement('button');
         del.className = 'moodlight-preset-delete';
         del.textContent = '✕';
