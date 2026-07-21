@@ -510,6 +510,7 @@ function createModal() {
     backdrop.className = 'moodlight-backdrop';
     backdrop.innerHTML = `
         <div class="moodlight-modal">
+          <div class="moodlight-modal-scroll">
             <div class="moodlight-header">
                 <span class="moodlight-title">MoodLight</span>
                 <button class="moodlight-close">✕</button>
@@ -591,6 +592,7 @@ function createModal() {
                 </div>
             </div>
             <div class="moodlight-presets-list"></div>
+          </div>
         </div>
     `;
 
@@ -1024,7 +1026,7 @@ function createSettingsUI() {
                         border-radius:5px; background:transparent; color:var(--SmartThemeBodyColor);
                         cursor:pointer; text-shadow:none;">↻</button>
                 </div>
-                <button class="moodlight-open-btn menu_button" style="width:60%; margin:4px auto 0;">MoodLight 열기</button>
+                <button class="moodlight-open-btn menu_button" style="width:60%;">MoodLight 열기</button>
             </div>
         </div>
     `;

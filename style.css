@@ -37,18 +37,25 @@
     width: 380px;
     max-width: 92vw;
     max-height: 85vh;
-    overflow-y: auto;
-    overflow-x: hidden;
     border-radius: 12px;
     border: 1px solid var(--SmartThemeBorderColor);
     background: rgb(from var(--SmartThemeBlurTintColor) r g b / 1);
     color: var(--SmartThemeBodyColor);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+}
+
+.moodlight-modal-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    transform: scale(0.95);
-    transition: transform 0.2s ease;
 }
 
 .moodlight-backdrop.active .moodlight-modal {
@@ -589,6 +596,9 @@
 @media (pointer: coarse) {
     .moodlight-modal {
         width: 94vw;
+    }
+
+    .moodlight-modal-scroll {
         padding: 14px;
         gap: 10px;
     }
