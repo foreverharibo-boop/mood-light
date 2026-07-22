@@ -255,9 +255,10 @@
 
 /* --- Color Grid --- */
 .ml-colors {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(4, 68px);
+    justify-content: center;
+    gap: 8px;
     margin-top: 10px;
 }
 
@@ -267,7 +268,6 @@
     align-items: center;
     gap: 3px;
     position: relative;
-    width: 68px;
 }
 
 .ml-color-item.disabled { opacity: 0.3; }
