@@ -300,6 +300,53 @@
     line-height: 1.1;
 }
 
+.ml-color-swatch.selected {
+    border: 2.5px solid #1a1a1a;
+}
+
+/* Hex Input Area */
+.ml-hex-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #f8f8f8;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.ml-hex-preview {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    flex-shrink: 0;
+}
+
+.ml-hex-label {
+    font-size: 10px;
+    color: #999;
+    flex-shrink: 0;
+    min-width: 35px;
+}
+
+.ml-hex-input {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 13px;
+    color: #1a1a1a;
+    background: #fff;
+    outline: none;
+    text-transform: uppercase;
+}
+
+.ml-hex-input:focus { border-color: #999; }
+
 .ml-color-toggle {
     position: absolute;
     top: 3px;

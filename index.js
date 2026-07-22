@@ -261,6 +261,7 @@ function createModal() {
       <div class="ml-mode" data-m="harmony" style="display:none"><div class="ml-harmony-row"><div class="ml-base-wrap"><div class="ml-base-swatch" style="background:#6C8EBF"></div><input type="color" class="ml-base-picker" value="#6C8EBF"/></div><select class="ml-harmony-select">${HARMONY_TYPES.map(h=>`<option value="${h.id}">${h.label}</option>`).join('')}</select><button class="ml-btn ml-harm-gen">생성</button></div></div>
       <div class="ml-status"></div>
       <div class="ml-colors"></div>
+      <div class="ml-hex-area" style="display:none"><div class="ml-hex-preview"></div><span class="ml-hex-label"></span><input class="ml-hex-input" maxlength="7" placeholder="#000000"/></div>
       <div class="ml-actions" style="display:none"><button class="ml-btn" data-a="apply">적용</button><button class="ml-btn" data-a="save">저장</button><button class="ml-btn" data-a="reset">초기화</button></div>
     </div>
     <div class="ml-section">
@@ -343,6 +344,39 @@ function createModal() {
 
 function renderColors(colors, ct) {
     const el = ct.querySelector('.ml-colors'); el.innerHTML = '';
+    const hexArea = ct.querySelector('.ml-hex-area');
+    const hexPreview = ct.querySelector('.ml-hex-preview');
+    const hexLabel = ct.querySelector('.ml-hex-label');
+    const hexInput = ct.querySelector('.ml-hex-input');
+    let selectedKey = null;
+
+    function selectSwatch(v, swEl) {
+        // 이전 선택 해제
+        el.querySelectorAll('.ml-color-swatch').forEach(s => s.classList.remove('selected'));
+        swEl.classList.add('selected');
+        selectedKey = v.key;
+        // hex 영역 표시
+        const hex = toHex(currentColors[v.key] || '#888888');
+        hexPreview.style.background = hex;
+        hexLabel.textContent = v.label;
+        hexInput.value = hex.toUpperCase();
+        hexArea.style.display = 'flex';
+    }
+
+    // hex 입력 이벤트
+    hexInput.oninput = () => {
+        let val = hexInput.value.trim();
+        if (!val.startsWith('#')) val = '#' + val;
+        if (/^#[0-9A-Fa-f]{6}$/.test(val) && selectedKey && currentColors) {
+            currentColors[selectedKey] = val;
+            hexPreview.style.background = val;
+            // 해당 스워치 색상도 업데이트
+            const sw = el.querySelector(`.ml-color-swatch[data-key="${selectedKey}"]`);
+            if (sw) sw.style.background = val;
+            injectColors(currentColors);
+        }
+    };
+
     for (const v of getVars()) {
         const c = colors[v.key]; if (!c) continue;
         const en = isEnabled(v.css);
@@ -350,9 +384,25 @@ function renderColors(colors, ct) {
         item.className = 'ml-color-item' + (en ? '' : ' disabled');
 
         const sw = document.createElement('div'); sw.className = 'ml-color-swatch'; sw.style.background = c;
+        sw.dataset.key = v.key;
+        // 스워치 클릭 → 선택 (컬러피커 대신)
+        sw.onclick = (e) => { e.stopPropagation(); selectSwatch(v, sw); };
+
+        // 컬러피커는 더블클릭/롱프레스로
         const pk = document.createElement('input'); pk.type = 'color'; pk.value = toHex(c);
-        pk.oninput = () => { sw.style.background = pk.value; currentColors[v.key] = pk.value; injectColors(currentColors); };
+        pk.oninput = () => {
+            sw.style.background = pk.value;
+            currentColors[v.key] = pk.value;
+            if (selectedKey === v.key) {
+                hexPreview.style.background = pk.value;
+                hexInput.value = pk.value.toUpperCase();
+            }
+            injectColors(currentColors);
+        };
+        // 피커는 숨기고 더블클릭으로만 열기
+        pk.style.pointerEvents = 'none';
         sw.appendChild(pk);
+        sw.ondblclick = (e) => { e.stopPropagation(); pk.click(); };
 
         const tg = document.createElement('div'); tg.className = 'ml-color-toggle ' + (en ? 'on' : '');
         tg.textContent = en ? '✓' : '';
@@ -370,6 +420,7 @@ function renderColors(colors, ct) {
         const lb = document.createElement('div'); lb.className = 'ml-color-label'; lb.textContent = v.label;
         item.append(sw, lb); el.appendChild(item);
     }
+    hexArea.style.display = 'none';
 }
 
 function renderPresets(ct) {
