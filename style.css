@@ -255,8 +255,8 @@
 
 /* --- Color Grid --- */
 .ml-colors {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 6px;
     margin-top: 10px;
 }
@@ -267,15 +267,14 @@
     align-items: center;
     gap: 3px;
     position: relative;
-    max-width: 100%;
+    width: 68px;
 }
 
 .ml-color-item.disabled { opacity: 0.3; }
 
 .ml-color-swatch {
-    width: 100%;
-    max-width: 80px;
-    aspect-ratio: 1;
+    width: 68px;
+    height: 68px;
     border-radius: 8px;
     border: 1px solid #e0e0e0;
     cursor: pointer;
