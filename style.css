@@ -267,12 +267,14 @@
     align-items: center;
     gap: 3px;
     position: relative;
+    max-width: 100%;
 }
 
 .ml-color-item.disabled { opacity: 0.3; }
 
 .ml-color-swatch {
     width: 100%;
+    max-width: 80px;
     aspect-ratio: 1;
     border-radius: 8px;
     border: 1px solid #e0e0e0;
