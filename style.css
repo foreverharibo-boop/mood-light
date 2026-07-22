@@ -316,6 +316,10 @@
     border: 1px solid #eee;
 }
 
+.ml-colors:empty + .ml-hex-area {
+    display: none;
+}
+
 .ml-hex-preview {
     width: 28px;
     height: 28px;

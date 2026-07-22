@@ -261,7 +261,7 @@ function createModal() {
       <div class="ml-mode" data-m="harmony" style="display:none"><div class="ml-harmony-row"><div class="ml-base-wrap"><div class="ml-base-swatch" style="background:#6C8EBF"></div><input type="color" class="ml-base-picker" value="#6C8EBF"/></div><select class="ml-harmony-select">${HARMONY_TYPES.map(h=>`<option value="${h.id}">${h.label}</option>`).join('')}</select><button class="ml-btn ml-harm-gen">생성</button></div></div>
       <div class="ml-status"></div>
       <div class="ml-colors"></div>
-      <div class="ml-hex-area" style="display:none"><div class="ml-hex-preview"></div><span class="ml-hex-label"></span><input class="ml-hex-input" maxlength="7" placeholder="#000000"/></div>
+      <div class="ml-hex-area"><div class="ml-hex-preview"></div><span class="ml-hex-label">-</span><input class="ml-hex-input" maxlength="7" placeholder="#000000" value=""/></div>
       <div class="ml-actions" style="display:none"><button class="ml-btn" data-a="apply">적용</button><button class="ml-btn" data-a="save">저장</button><button class="ml-btn" data-a="reset">초기화</button></div>
     </div>
     <div class="ml-section">
@@ -351,16 +351,13 @@ function renderColors(colors, ct) {
     let selectedKey = null;
 
     function selectSwatch(v, swEl) {
-        // 이전 선택 해제
         el.querySelectorAll('.ml-color-swatch').forEach(s => s.classList.remove('selected'));
         swEl.classList.add('selected');
         selectedKey = v.key;
-        // hex 영역 표시
         const hex = toHex(currentColors[v.key] || '#888888');
         hexPreview.style.background = hex;
         hexLabel.textContent = v.label;
         hexInput.value = hex.toUpperCase();
-        hexArea.style.display = 'flex';
     }
 
     // hex 입력 이벤트
@@ -420,7 +417,11 @@ function renderColors(colors, ct) {
         const lb = document.createElement('div'); lb.className = 'ml-color-label'; lb.textContent = v.label;
         item.append(sw, lb); el.appendChild(item);
     }
-    hexArea.style.display = 'none';
+
+    // 첫 번째 색 자동 선택
+    const firstSw = el.querySelector('.ml-color-swatch');
+    const firstVar = getVars().find(v => colors[v.key]);
+    if (firstSw && firstVar) selectSwatch(firstVar, firstSw);
 }
 
 function renderPresets(ct) {
