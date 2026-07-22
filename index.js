@@ -14,11 +14,15 @@ const DEFAULT_VARS = [
     { key: 'botMesColor',   css: '--SmartThemeBotMesBlurTintColor',  label: 'Bot',    tint: true },
     { key: 'quoteColor',    css: '--SmartThemeQuoteColor',           label: 'Quote' },
     { key: 'emColor',       css: '--SmartThemeEmColor',              label: 'Em' },
+    { key: 'iriverPen',    css: '--iriver-highlighter',              label: 'iRIVER_v1.3_Highlighter', direct: true },
     { key: 'iriverIcon',   css: '--iriver-muted',                    label: 'iRIVER_icon',          direct: true },
 ];
 
 // 테마 전용 변수 → 직접 셀렉터 매핑
 const DIRECT_RULES = {
+    iriverPen: (hex) => {
+        return `.mes_text q { background-color: ${hexToRgba(hex, 0.28)} !important; }`;
+    },
     iriverIcon: (hex) => {
         return [
             `.drawer-icon.closedIcon::before { color: ${hex} !important; }`,
