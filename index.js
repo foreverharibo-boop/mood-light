@@ -14,15 +14,30 @@ const DEFAULT_VARS = [
     { key: 'botMesColor',   css: '--SmartThemeBotMesBlurTintColor',  label: 'Bot',    tint: true },
     { key: 'quoteColor',    css: '--SmartThemeQuoteColor',           label: 'Quote' },
     { key: 'emColor',       css: '--SmartThemeEmColor',              label: 'Em' },
-    { key: 'iriverPen',    css: '--iriver-highlighter',              label: 'iRIVER_v1.3_Highlighter', direct: true },
-    { key: 'iriverIcon',   css: '--iriver-muted',                    label: 'iRIVER_icon',          direct: true },
+    { key: 'iriver13hl',   css: '--iriver13-hl',    label: 'iRIVER_v1.3_HL',       direct: true },
+    { key: 'iriver13dlg',  css: '--iriver13-dlg',   label: 'iRIVER_v1.3_Dialogue',  direct: true },
+    { key: 'iriver15hl',   css: '--iriver15-hl',    label: 'iRIVER_v1.5_HL',       direct: true },
+    { key: 'iriver15dlg',  css: '--iriver15-dlg',   label: 'iRIVER_v1.5_Dialogue',  direct: true },
+    { key: 'macHl',        css: '--mac-hl',         label: 'Mac_HL',               direct: true },
+    { key: 'macDlg',       css: '--mac-dlg',        label: 'Mac_Dialogue',          direct: true },
+    { key: 'iriverIcon',   css: '--iriver-muted',   label: 'iRIVER_icon',           direct: true },
 ];
 
 // 테마 전용 변수 → 직접 셀렉터 매핑
 const DIRECT_RULES = {
-    iriverPen: (hex) => {
-        return `.mes_text q { background-color: ${hexToRgba(hex, 0.28)} !important; }`;
-    },
+    // iRiver v1.3 — <q> 태그 기반
+    iriver13hl: (hex) => `.mes_text q { background-color: ${hexToRgba(hex, 0.28)} !important; }`,
+    iriver13dlg: (hex) => `.mes_text q { color: ${hex} !important; }`,
+
+    // iRiver v1.5 — <q> 태그 기반 (동일 셀렉터, 별도 토글)
+    iriver15hl: (hex) => `.mes_text q { background-color: ${hexToRgba(hex, 0.28)} !important; }`,
+    iriver15dlg: (hex) => `.mes_text q { color: ${hex} !important; }`,
+
+    // MacRetro — <em> 태그 기반
+    macHl: (hex) => `.mes_text em { background-color: ${hexToRgba(hex, 0.08)} !important; }`,
+    macDlg: (hex) => `.mes_text em { color: ${hex} !important; }`,
+
+    // iRiver 아이콘
     iriverIcon: (hex) => {
         return [
             `.drawer-icon.closedIcon::before { color: ${hex} !important; }`,
