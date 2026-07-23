@@ -1,6 +1,6 @@
 // MoodLight v2 — AI-powered theme color override for SillyTavern
 import { extension_settings, getContext } from '../../../extensions.js';
-import { saveSettingsDebounced, getRequestHeaders } from '../../../../script.js';
+import { saveSettingsDebounced } from '../../../../script.js';
 
 const EXT = 'moodlight';
 const STYLE_ID = 'moodlight-override-style';
@@ -228,39 +228,36 @@ async function generateAI(mood, existing) {
     const cfg=s(), target=cfg.selectedProfile, orig=curProfile(); let switched=false;
     try {
         if(target&&target!==orig) switched=await switchProfile(target);
+        const ctx=getContext();
+        const prompt=buildPrompt(mood,existing);
+        let r=null;
 
-        const prompt = buildPrompt(mood, existing);
-        const res = await fetch('/api/backends/chat-completions/generate', {
-            method: 'POST',
-            headers: getRequestHeaders(),
-            body: JSON.stringify({
-                messages: [
-                    { role: 'system', content: 'You are a color palette designer. Return only raw JSON. No markdown.' },
-                    { role: 'user', content: prompt }
-                ],
-            })
-        });
-
-        if (!res.ok) {
-            const errText = await res.text().catch(() => '');
-            throw new Error(`API 오류 (${res.status}): ${errText.slice(0, 100)}`);
+        // 1순위: generateRaw — 채팅 파이프라인/UI 표시 없이 조용히 생성
+        if(typeof ctx.generateRaw==='function'){
+            try{
+                // 신버전 ST: 객체 파라미터
+                r=await ctx.generateRaw({ prompt, quietToLoud:false });
+            }catch(e){
+                try{
+                    // 구버전 ST: 위치 파라미터 (prompt, api, instructOverride)
+                    r=await ctx.generateRaw(prompt, null, false);
+                }catch(e2){ r=null; }
+            }
         }
 
-        const data = await res.json();
-        // ST 백엔드 응답에서 텍스트 추출
-        const r = typeof data === 'string' ? data
-            : data?.choices?.[0]?.message?.content
-            || data?.content?.[0]?.text
-            || data?.response || '';
-        if (!r) throw new Error('빈 응답');
+        // 2순위 폴백: generateQuietPrompt
+        if(!r && typeof ctx.generateQuietPrompt==='function'){
+            r=await ctx.generateQuietPrompt(prompt,false,false);
+        }
 
-        const m = r.match(/\{[\s\S]*\}/);
-        if (!m) throw new Error('JSON 없음');
-        const c = JSON.parse(m[0]);
-        if (!getVars().some(v => c[v.key])) throw new Error('유효한 색상 없음');
+        if(!r) throw new Error('생성 실패 (generateRaw/generateQuietPrompt 모두 실패)');
+        const m=r.match(/\{[\s\S]*\}/);
+        if(!m) throw new Error('JSON 없음');
+        const c=JSON.parse(m[0]);
+        if(!getVars().some(v=>c[v.key])) throw new Error('유효한 색상 없음');
         return ensureContrast(c);
     } finally {
-        if (switched && orig) await switchProfile(orig);
+        if(switched&&orig) await switchProfile(orig);
     }
 }
 
