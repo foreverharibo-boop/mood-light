@@ -1,6 +1,6 @@
 // MoodLight v2 — AI-powered theme color override for SillyTavern
 import { extension_settings, getContext } from '../../../extensions.js';
-import { saveSettingsDebounced } from '../../../../script.js';
+import { saveSettingsDebounced, getRequestHeaders } from '../../../../script.js';
 
 const EXT = 'moodlight';
 const STYLE_ID = 'moodlight-override-style';
@@ -226,13 +226,42 @@ function buildPrompt(mood, existing) {
 }
 async function generateAI(mood, existing) {
     const cfg=s(), target=cfg.selectedProfile, orig=curProfile(); let switched=false;
-    try{ if(target&&target!==orig) switched=await switchProfile(target);
-        const ctx=getContext(); if(typeof ctx.generateQuietPrompt!=='function') throw new Error('generateQuietPrompt 없음');
-        const r=await ctx.generateQuietPrompt(buildPrompt(mood,existing),false,false); if(!r)throw new Error('빈 응답');
-        const m=r.match(/\{[\s\S]*\}/); if(!m)throw new Error('JSON 없음');
-        const c=JSON.parse(m[0]); if(!getVars().some(v=>c[v.key]))throw new Error('유효한 색상 없음');
+    try {
+        if(target&&target!==orig) switched=await switchProfile(target);
+
+        const prompt = buildPrompt(mood, existing);
+        const res = await fetch('/api/backends/chat-completions/generate', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({
+                messages: [
+                    { role: 'system', content: 'You are a color palette designer. Return only raw JSON. No markdown.' },
+                    { role: 'user', content: prompt }
+                ],
+            })
+        });
+
+        if (!res.ok) {
+            const errText = await res.text().catch(() => '');
+            throw new Error(`API 오류 (${res.status}): ${errText.slice(0, 100)}`);
+        }
+
+        const data = await res.json();
+        // ST 백엔드 응답에서 텍스트 추출
+        const r = typeof data === 'string' ? data
+            : data?.choices?.[0]?.message?.content
+            || data?.content?.[0]?.text
+            || data?.response || '';
+        if (!r) throw new Error('빈 응답');
+
+        const m = r.match(/\{[\s\S]*\}/);
+        if (!m) throw new Error('JSON 없음');
+        const c = JSON.parse(m[0]);
+        if (!getVars().some(v => c[v.key])) throw new Error('유효한 색상 없음');
         return ensureContrast(c);
-    }finally{ if(switched&&orig) await switchProfile(orig); }
+    } finally {
+        if (switched && orig) await switchProfile(orig);
+    }
 }
 
 // ========== PRESETS ==========
