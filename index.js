@@ -6,14 +6,16 @@ const EXT = 'moodlight';
 const STYLE_ID = 'moodlight-override-style';
 
 const DEFAULT_VARS = [
-    { key: 'bodyColor',     css: '--SmartThemeBodyColor',            label: 'Text' },
-    { key: 'blurTintColor', css: '--SmartThemeBlurTintColor',        label: 'Panel',  tint: true },
-    { key: 'borderColor',   css: '--SmartThemeBorderColor',          label: 'Border' },
-    { key: 'chatTintColor', css: '--SmartThemeChatTintColor',        label: 'Chat',   tint: true },
-    { key: 'userMesColor',  css: '--SmartThemeUserMesBlurTintColor', label: 'User',   tint: true },
-    { key: 'botMesColor',   css: '--SmartThemeBotMesBlurTintColor',  label: 'Bot',    tint: true },
-    { key: 'quoteColor',    css: '--SmartThemeQuoteColor',           label: 'Quote' },
-    { key: 'emColor',       css: '--SmartThemeEmColor',              label: 'Em' },
+    { key: 'bodyColor',     css: '--SmartThemeBodyColor',            label: '텍스트' },
+    { key: 'blurTintColor', css: '--SmartThemeBlurTintColor',        label: '패널 배경',  tint: true },
+    { key: 'borderColor',   css: '--SmartThemeBorderColor',          label: '테두리' },
+    { key: 'chatTintColor', css: '--SmartThemeChatTintColor',        label: '채팅 배경',   tint: true },
+    { key: 'userMesColor',  css: '--SmartThemeUserMesBlurTintColor', label: '사용자 말풍선',   tint: true },
+    { key: 'botMesColor',   css: '--SmartThemeBotMesBlurTintColor',  label: '캐릭터 말풍선',    tint: true },
+    { key: 'quoteColor',    css: '--SmartThemeQuoteColor',           label: '인용문' },
+    { key: 'emColor',       css: '--SmartThemeEmColor',              label: '기울임' },
+    { key: 'controlBgColor',  css: '--moodlight-control-bg',          label: '조작 요소',  tint: true, direct: true },
+    { key: 'dropdownBgColor', css: '--moodlight-dropdown-bg',         label: '선택 목록', tint: true, direct: true },
     { key: 'iriver13hl',   css: '--iriver13-hl',    label: 'iRIVER_v1.3_HL',       direct: true },
     { key: 'iriver13dlg',  css: '--iriver13-dlg',   label: 'iRIVER_v1.3_Dialogue',  direct: true },
     { key: 'iriver15hl',   css: '--iriver15-hl',    label: 'iRIVER_v1.5_HL',       direct: true },
@@ -23,6 +25,25 @@ const DEFAULT_VARS = [
 
 // 테마 전용 변수 → 직접 셀렉터 매핑
 const DIRECT_RULES = {
+    // SillyTavern uses the main text color as a background for these controls.
+    // Keep them independently themeable so Text remains a foreground color.
+    controlBgColor: (hex) => {
+        const tick = contrastText(hex);
+        return [
+            `:root { --SmartThemeCheckboxTickColor: ${tick} !important; }`,
+            `input[type="checkbox"] { background-color: ${hex} !important; }`,
+            `.neo-range-slider, input[type="range"] { background-color: ${hex} !important; }`,
+        ].join('\n');
+    },
+
+    // Select2 otherwise reuses --SmartThemeBodyColor for option backgrounds.
+    dropdownBgColor: (hex) => {
+        return [
+            `.select2-dropdown { background-color: ${hex} !important; }`,
+            `.select2-results__option, .select2-results .select2-results__option--selectable, .select2-results .select2-results__option--group { background-color: ${hex} !important; }`,
+        ].join('\n');
+    },
+
     // iRiver v1.3 — <q> 태그 기반
     iriver13hl: (hex) => `.mes_text q { background-color: ${hexToRgba(hex, 0.28)} !important; }`,
     iriver13dlg: (hex) => `.mes_text q { color: ${hex} !important; }`,
@@ -63,6 +84,13 @@ function loadSettings() {
     const s = extension_settings[EXT];
     for (const [k, v] of Object.entries(DEFAULT_SETTINGS))
         if (s[k] === undefined) s[k] = typeof v === 'object' ? structuredClone(v) : v;
+    // Older presets predate the independent Control/Dropdown colors.
+    // Fill them from the closest existing palette colors without discarding data.
+    if (Array.isArray(s.presets)) {
+        for (const preset of s.presets) {
+            if (preset?.colors) preset.colors = normalizeColors(preset.colors);
+        }
+    }
 }
 function s() { return extension_settings[EXT]; }
 function save() { saveSettingsDebounced(); }
@@ -126,6 +154,7 @@ function hexToRgba(hex, a) {
 function processColor(v, c) { const hex = toHex(c); if (!v.tint) return hex; const a = readAlpha(v.css); return a >= 1 ? hex : hexToRgba(hex, a); }
 function injectColors(colors) {
     if (!colors) { getStyleEl().textContent = ''; return; }
+    colors = normalizeColors(colors);
     const vars = getVars();
     const varLines = vars.filter(v => colors[v.key] && isEnabled(v.css) && !v.direct)
         .map(v => `${v.css}:${processColor(v, colors[v.key])} !important;`);
@@ -141,6 +170,17 @@ function injectColors(colors) {
 function clearInjection() {
     const el = document.getElementById(STYLE_ID); if (el) el.textContent = '';
     currentColors = null; s().activePresetId = null; save();
+}
+
+function normalizeColors(colors) {
+    const normalized = { ...colors };
+    if (!normalized.controlBgColor) {
+        normalized.controlBgColor = normalized.emColor || normalized.borderColor || normalized.bodyColor || '#888888';
+    }
+    if (!normalized.dropdownBgColor) {
+        normalized.dropdownBgColor = normalized.blurTintColor || normalized.chatTintColor || '#222222';
+    }
+    return normalized;
 }
 
 // ========== COLOR HELPERS ==========
@@ -168,6 +208,10 @@ function relLum(hex) {
     return 0.2126*f(0)+0.7152*f(2)+0.0722*f(4);
 }
 function contrast(a,b) { const l1=relLum(a),l2=relLum(b); return (Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05); }
+function contrastText(background) {
+    const hex = toHex(background);
+    return contrast('#000000', hex) >= contrast('#ffffff', hex) ? '#000000' : '#ffffff';
+}
 function ensureContrast(colors) {
     const vars=getVars(), bk=vars.filter(v=>v.tint).map(v=>v.key), fg=vars.filter(v=>!v.tint).map(v=>v.key);
     const bgKey=bk.find(k=>colors[k])||bk[0], bg=colors[bgKey]; if(!bg) return colors;
@@ -255,19 +299,19 @@ async function generateAI(mood, existing) {
         if(!m) throw new Error('JSON 없음');
         const c=JSON.parse(m[0]);
         if(!getVars().some(v=>c[v.key])) throw new Error('유효한 색상 없음');
-        return ensureContrast(c);
+        return ensureContrast(normalizeColors(c));
     } finally {
         if(switched&&orig) await switchProfile(orig);
     }
 }
 
 // ========== PRESETS ==========
-function savePreset(name,colors){ const id=Date.now().toString(36); s().presets.push({id,name,colors:{...colors}}); s().activePresetId=id; save(); return id; }
+function savePreset(name,colors){ const id=Date.now().toString(36); s().presets.push({id,name,colors:normalizeColors(colors)}); s().activePresetId=id; save(); return id; }
 function deletePreset(id){ const d=s(); d.presets=d.presets.filter(p=>p.id!==id); if(d.activePresetId===id)d.activePresetId=null; save(); }
 function applyPreset(id){ const p=s().presets.find(p=>p.id===id); if(!p)return; injectColors(p.colors); s().activePresetId=id; save(); }
 function exportPresets(){ const b=new Blob([JSON.stringify(s().presets,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='moodlight-presets.json'; a.click(); }
 function importPresets(file){ return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);
-    if(!Array.isArray(d))throw new Error('형식오류');d.forEach(p=>{p.id=p.id||Date.now().toString(36)+Math.random().toString(36).slice(2,5);if(p.colors)s().presets.push(p);});
+    if(!Array.isArray(d))throw new Error('형식오류');d.forEach(p=>{p.id=p.id||Date.now().toString(36)+Math.random().toString(36).slice(2,5);if(p.colors){p.colors=normalizeColors(p.colors);s().presets.push(p);}});
     save();res(d.length);}catch(e){rej(e);}};r.onerror=()=>rej(new Error('읽기실패'));r.readAsText(file);});}
 
 // ========== MODAL ==========
