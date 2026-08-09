@@ -514,26 +514,16 @@ function renderPresets(ct) {
 
         const sw = document.createElement('div'); sw.className = 'ml-preset-swatches';
         for (const k of ['blurTintColor','bodyColor','userMesColor','botMesColor'])
-            if(p.colors[k]){
-                const d=document.createElement('div');d.className='ml-preset-dot';d.style.background=p.colors[k];
-                d.onclick=(e)=>{
-                    e.stopPropagation();
-                    const hexArea=ct.querySelector('.ml-hex-area');
-                    const hexPreview=ct.querySelector('.ml-hex-preview');
-                    const hexLabel=ct.querySelector('.ml-hex-label');
-                    const hexInput=ct.querySelector('.ml-hex-input');
-                    if(!hexPreview||!hexInput)return;
-                    if(hexArea)hexArea.classList.add('ml-force-show');
-                    ct.querySelectorAll('.ml-color-swatch').forEach(s2=>s2.classList.remove('selected'));
-                    hexInput.dataset.key='';
-                    const hex=toHex(p.colors[k]);
-                    hexPreview.style.background=hex;
-                    const vDef=getVars().find(v2=>v2.key===k);
-                    hexLabel.textContent=`${p.name.slice(0,8)}·${vDef?vDef.label:k}`;
-                    hexInput.value=hex.toUpperCase();
-                };
-                sw.appendChild(d);
-            }
+            if(p.colors[k]){const d=document.createElement('div');d.className='ml-preset-dot';d.style.background=p.colors[k];sw.appendChild(d);}
+        // 스워치 묶음 클릭 → 이 프리셋 전체 팔레트를 그리드에 로드 (적용 X, 편집용)
+        sw.style.cursor='pointer';
+        sw.onclick=(e)=>{
+            e.stopPropagation();
+            currentColors={...p.colors};
+            renderColors(p.colors,ct);
+            ct.querySelector('.ml-actions').style.display='flex';
+            updateGenBtn();
+        };
 
         const nm = document.createElement('span'); nm.className = 'ml-preset-name'; nm.textContent = p.name;
         nm.onclick = e => { e.stopPropagation();
