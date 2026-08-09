@@ -433,6 +433,7 @@ function renderColors(colors, ct) {
         el.querySelectorAll('.ml-color-swatch').forEach(s => s.classList.remove('selected'));
         swEl.classList.add('selected');
         selectedKey = v.key;
+        hexInput.dataset.key = v.key;
         const hex = toHex(currentColors[v.key] || '#888888');
         hexPreview.style.background = hex;
         hexLabel.textContent = v.label;
@@ -441,13 +442,13 @@ function renderColors(colors, ct) {
 
     // hex 입력 이벤트
     hexInput.oninput = () => {
+        const key = hexInput.dataset.key;
         let val = hexInput.value.trim();
         if (!val.startsWith('#')) val = '#' + val;
-        if (/^#[0-9A-Fa-f]{6}$/.test(val) && selectedKey && currentColors) {
-            currentColors[selectedKey] = val;
+        if (/^#[0-9A-Fa-f]{6}$/.test(val) && key && currentColors) {
+            currentColors[key] = val;
             hexPreview.style.background = val;
-            // 해당 스워치 색상도 업데이트
-            const sw = el.querySelector(`.ml-color-swatch[data-key="${selectedKey}"]`);
+            const sw = el.querySelector(`.ml-color-swatch[data-key="${key}"]`);
             if (sw) sw.style.background = val;
             injectColors(currentColors);
         }
@@ -469,7 +470,7 @@ function renderColors(colors, ct) {
         pk.oninput = () => {
             sw.style.background = pk.value;
             currentColors[v.key] = pk.value;
-            if (selectedKey === v.key) {
+            if (hexInput.dataset.key === v.key) {
                 hexPreview.style.background = pk.value;
                 hexInput.value = pk.value.toUpperCase();
             }
@@ -513,7 +514,26 @@ function renderPresets(ct) {
 
         const sw = document.createElement('div'); sw.className = 'ml-preset-swatches';
         for (const k of ['blurTintColor','bodyColor','userMesColor','botMesColor'])
-            if(p.colors[k]){const d=document.createElement('div');d.className='ml-preset-dot';d.style.background=p.colors[k];sw.appendChild(d);}
+            if(p.colors[k]){
+                const d=document.createElement('div');d.className='ml-preset-dot';d.style.background=p.colors[k];
+                d.onclick=(e)=>{
+                    e.stopPropagation();
+                    const hexArea=ct.querySelector('.ml-hex-area');
+                    const hexPreview=ct.querySelector('.ml-hex-preview');
+                    const hexLabel=ct.querySelector('.ml-hex-label');
+                    const hexInput=ct.querySelector('.ml-hex-input');
+                    if(!hexPreview||!hexInput)return;
+                    if(hexArea)hexArea.classList.add('ml-force-show');
+                    ct.querySelectorAll('.ml-color-swatch').forEach(s2=>s2.classList.remove('selected'));
+                    hexInput.dataset.key='';
+                    const hex=toHex(p.colors[k]);
+                    hexPreview.style.background=hex;
+                    const vDef=getVars().find(v2=>v2.key===k);
+                    hexLabel.textContent=`${p.name.slice(0,8)}·${vDef?vDef.label:k}`;
+                    hexInput.value=hex.toUpperCase();
+                };
+                sw.appendChild(d);
+            }
 
         const nm = document.createElement('span'); nm.className = 'ml-preset-name'; nm.textContent = p.name;
         nm.onclick = e => { e.stopPropagation();
