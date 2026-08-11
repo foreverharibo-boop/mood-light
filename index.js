@@ -6,7 +6,7 @@ const EXT = 'moodlight';
 const STYLE_ID = 'moodlight-override-style';
 
 const DEFAULT_VARS = [
-    { key: 'bodyColor',     css: '--SmartThemeBodyColor',            label: '텍스트' },
+    { key: 'bodyColor',     css: '--SmartThemeBodyColor',            label: '서술텍스트' },
     { key: 'blurTintColor', css: '--SmartThemeBlurTintColor',        label: '패널 배경',  tint: true },
     { key: 'borderColor',   css: '--SmartThemeBorderColor',          label: '테두리' },
     { key: 'chatTintColor', css: '--SmartThemeChatTintColor',        label: '채팅 배경',   tint: true },
@@ -16,10 +16,9 @@ const DEFAULT_VARS = [
     { key: 'emColor',       css: '--SmartThemeEmColor',              label: '기울임' },
     { key: 'controlBgColor',  css: '--moodlight-control-bg',          label: '조작 요소',  tint: true, direct: true },
     { key: 'dropdownBgColor', css: '--moodlight-dropdown-bg',         label: '선택 목록', tint: true, direct: true },
-    { key: 'iriver13hl',   css: '--iriver13-hl',    label: 'iRIVER_v1.3_HL',       direct: true },
-    { key: 'iriver13dlg',  css: '--iriver13-dlg',   label: 'iRIVER_v1.3_Dialogue',  direct: true },
-    { key: 'iriver15hl',   css: '--iriver15-hl',    label: 'iRIVER_v1.5_HL',       direct: true },
-    { key: 'iriver15dlg',  css: '--iriver15-dlg',   label: 'iRIVER_v1.5_Dialogue',  direct: true },
+    { key: 'iriver13hl',   css: '--iriver13-hl',    label: '하이라이터',       direct: true },
+    { key: 'iriver13dlg',  css: '--iriver13-dlg',   label: '대사색',        direct: true },
+    { key: 'macHlLine',    css: '--accentColor',    label: 'MAC-HL_Line',  direct: true },
     { key: 'iriverIcon',   css: '--iriver-muted',   label: 'iRIVER_icon',           direct: true },
 ];
 
@@ -48,9 +47,8 @@ const DIRECT_RULES = {
     iriver13hl: (hex) => `.mes_text q { background-color: ${hexToRgba(hex, 0.28)} !important; }`,
     iriver13dlg: (hex) => `.mes_text q { color: ${hex} !important; }`,
 
-    // iRiver v1.5 — <q> 태그 기반 (동일 셀렉터, 별도 토글)
-    iriver15hl: (hex) => `.mes_text q { background-color: ${hexToRgba(hex, 0.28)} !important; }`,
-    iriver15dlg: (hex) => `.mes_text q { color: ${hex} !important; }`,
+    // MAC-HL 좌우 선 (대사 감싸는 ㅣ ㅣ 선)
+    macHlLine: (hex) => `.mes_text q { border-left: 1px solid ${hex} !important; border-right: 1px solid ${hex} !important; }`,
 
     // iRiver 아이콘
     iriverIcon: (hex) => {
