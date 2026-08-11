@@ -19,6 +19,7 @@ const DEFAULT_VARS = [
     { key: 'iriver13hl',   css: '--iriver13-hl',    label: '하이라이터',       direct: true },
     { key: 'iriver13dlg',  css: '--iriver13-dlg',   label: '대사색',        direct: true },
     { key: 'macHlLine',    css: '--accentColor',    label: 'MAC-HL_Line',  direct: true },
+    { key: 'macPromptBg',  css: '--buttonFill',      label: 'mac_프롬 배경', direct: true },
     { key: 'iriverIcon',   css: '--iriver-muted',   label: 'iRIVER_icon',           direct: true },
 ];
 
@@ -49,6 +50,9 @@ const DIRECT_RULES = {
 
     // MAC-HL 좌우 선 (대사 감싸는 ㅣ ㅣ 선)
     macHlLine: (hex) => `.mes_text q { border-left: 1px solid ${hex} !important; border-right: 1px solid ${hex} !important; }`,
+
+    // MAC 프롬프트 항목 배경
+    macPromptBg: (hex) => `#completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt { background-color: ${hex} !important; }`,
 
     // iRiver 아이콘
     iriverIcon: (hex) => {
